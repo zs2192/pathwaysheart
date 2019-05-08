@@ -364,27 +364,6 @@ a1$edu3 <- a1$education6
 a1$edu4 <- rowSums(a1[,c(76:77)], na.rm = T)
 
 
-# examine data distribution
-
-
-par(mfrow=c(4,6))
-lapply(5:114, function(x){
-  if(class(a1[,x]) %in% c('numeric')){
-    plot(density(a1[,x], na.rm=T), main = names(a1)[x])
-  } 
-  if(class(a1[,x]) %in% c('factor')){
-    plot(a1[,x], main = names(a1)[x])
-  } 
-  if(class(a1[,x]) %in% c('Date')){
-    hist(a1[,x], breaks = 'year', main = names(a1)[x])
-  } 
-})
-
-dev.off()
-
-
-
-
 
 
 
