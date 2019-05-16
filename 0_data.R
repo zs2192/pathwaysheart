@@ -41,8 +41,8 @@ parity <- as.data.frame(read_sas(paste0(pathpref,'parity.sas7bdat')))
 census <- as.data.frame(read_sas(paste0(pathpref,'census.sas7bdat')))
 
 # import CVD outcome data recevied on 5/1/2019
-pathpref = 'Q:/HGREENLEE/Data Working/Pathways Heart Study/CVD outcome/2019-05-01/'
-cvd <- as.data.frame(read_sas(paste0(pathpref,'cvd_outcomes_thruDec2018.sas7bdat')))
+pathpref = 'Q:/HGREENLEE/Data Working/Pathways Heart Study/CVD outcome/2019-05-16/'
+cvd <- as.data.frame(read_sas(paste0(pathpref,'cvd_outcomes_12moprior_thruDec2018_15may19.sas7bdat')))
 
 
 
