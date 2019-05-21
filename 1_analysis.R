@@ -12,7 +12,7 @@ library(reshape2)
 
 
 ################################################################################
-# compare key matching criteria between cases and controls
+# compare characteristics between cases and controls
 
 tab1 <- function(x){
   if(class(a1[,x]) %in% c('numeric')){
@@ -108,6 +108,59 @@ tabel2 <- cbind(row.names(table2), table2)
 
 write.csv(table1, 'table 1.csv')
 write.csv(table2, 'table 2.csv')
+
+
+
+
+
+################################################################################
+# Compare cvd events between cases and controls
+
+cvdvars <-names(a1[,c(124:133,158:181)])
+
+## create binary vars for prevalent cvd
+a1[,paste0(cvdvars,'_p')] <- lapply(a1[,cvdvars], function(x){
+  y <- factor(ifelse(x=='Prevalent','Yes','No'), levels=c('Yes','No'))
+  y
+})
+
+
+## create binary vars for incident cvd
+a1[,paste0(cvdvars,'_i')] <- lapply(a1[,cvdvars], function(x){
+  y <- factor(ifelse(x=='Incident','Yes','No'), levels=c('Yes','No'))
+  y
+})
+
+
+## compare between all cases and controls
+
+table1_cvd <- do.call(rbind,lapply(c(paste0(cvdvars,'_p'),
+                                 paste0(cvdvars,'_i')),tab1))
+
+table1_cvd <- data.frame(cbind(row.names(table1_cvd), table1_cvd))
+
+
+## compare between Pathways cases and controls
+
+table1_cvd_pw <- do.call(rbind,lapply(c(paste0(cvdvars,'_p'),
+                                     paste0(cvdvars,'_i')),tab1))
+
+table1_cvd_pw <- cbind(row.names(table1_cvd_pw), table1_cvd_pw)
+
+
+
+
+write.csv(table1_cvd[table1_cvd$V1=='Yes',], 'table 1 cvd.csv')
+
+
+
+
+
+
+
+
+
+
 
 
 

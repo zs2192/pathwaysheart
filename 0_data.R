@@ -1,5 +1,5 @@
 # CVD and BC data cleaning
-# Zaixing Shi, 5/7/2019
+# Zaixing Shi, 5/16/2019
 
 library(tidyverse)
 library(haven)
@@ -176,32 +176,45 @@ smok1 <- ddply(smok1, .(CVD_studyid), function(d){
 
 ## keep events after index date
 
-cvd1 <- cvd[which(cvd$adate > cvd$index_date),]
+cvd$CONDITION[cvd$CONDITION=='Percutaneous transluminal coronary angioplasty status'] <- 'Percutaneous transluminal coronary angioplasty'
 
 
 ## make long to wide format, keep 1st occurence of each condition only
 ### condition groups
-cvd2 <- dcast(data=cvd1, CVD_STUDYID~group, value.var = 'adate', min,na.rm=T)
+cvd2 <- dcast(data=cvd, CVD_STUDYID+index_date~group, value.var = 'adate', min,na.rm=T)
 
-cvd2[,-1] <- lapply(cvd2[,-1], function(x) as.Date(x, origin='1970-01-01'))
-cvd2[,-1] <- lapply(cvd2[,-1], function(x) as.Date(as.character(x)))
+cvd2[,-1:-2] <- lapply(cvd2[,-1:-2], function(x) as.Date(x, origin='1970-01-01'))
+cvd2[,-1:-2] <- lapply(cvd2[,-1:-2], function(x) as.Date(as.character(x)))
 
 names(cvd2) <- gsub('/| ','_',names(cvd2))
-cvd_grp <- names(cvd2)[-1]
-names(cvd2)[-1] <- paste0(names(cvd2)[-1],'_dt')
-cvd2[,cvd_grp] <- lapply(cvd2[,-1], function(x) ifelse(!is.na(x),1,0))
+cvd_grp <- paste0(names(cvd2)[-1:-2],'_grp')
+names(cvd2)[-1:-2] <- paste0(cvd_grp,'_dt')
+
+cvd2[,cvd_grp] <- lapply(cvd2[,-1:-2], function(x) {
+  y <- ifelse(!is.na(x),1,0)
+  y[y==1 & x>cvd2$index_date] <- 2
+  y <- factor(y, levels=0:2, labels = c('No','Prevalent','Incident'))
+  y
+  })
+
+
 
 
 ### condition
-cvd3 <- dcast(data=cvd1, CVD_STUDYID~CONDITION, value.var = 'adate', min,na.rm=T)
+cvd3 <- dcast(data=cvd, CVD_STUDYID+index_date~CONDITION, value.var = 'adate', min,na.rm=T)
 
-cvd3[,-1] <- lapply(cvd3[,-1], function(x) as.Date(x, origin='1970-01-01'))
-cvd3[,-1] <- lapply(cvd3[,-1], function(x) as.Date(as.character(x)))
+cvd3[,-1:-2] <- lapply(cvd3[,-1:-2], function(x) as.Date(x, origin='1970-01-01'))
+cvd3[,-1:-2] <- lapply(cvd3[,-1:-2], function(x) as.Date(as.character(x)))
 
 names(cvd3) <- gsub('/| ','_',names(cvd3))
-cvd_cond <- names(cvd3)[-1]
-names(cvd3)[-1] <- paste0(names(cvd3)[-1],'_dt')
-cvd3[,cvd_cond] <- lapply(cvd3[,-1], function(x) ifelse(!is.na(x),1,0))
+cvd_cond <- names(cvd3)[-1:-2]
+names(cvd3)[-1:-2] <- paste0(names(cvd3)[-1:-2],'_dt')
+cvd3[,cvd_cond] <- lapply(cvd3[,-1:-2],  function(x) {
+  y <- ifelse(!is.na(x),1,0)
+  y[y==1 & x>cvd2$index_date] <- 2
+  y <- factor(y, levels=0:2, labels = c('No','Prevalent','Incident'))
+  y
+})
 
 
 
@@ -222,7 +235,8 @@ datalist <- list(all,
                  diab[,c(1,4:10)],lipid[,2:4], 
                  smok1[,c(2,5:8)],menop[,c(1,3)],parity[,c(1,5,6)],
                  census[,c(2,5:48)],
-                 cvd2)
+                 cvd2[,-2],
+                 cvd3[,-2])
 
 ## make all var names lower case
 datalist <- lapply(datalist,function(x){
@@ -235,8 +249,8 @@ datalist <- lapply(datalist,function(x){
 a1 <- Reduce(function(...) merge(...,by='cvd_studyid', all.x=T), datalist)
 
 ## set all NA for cvd outcomes as 0
-a1[,124:133] <- lapply(a1[,124:133], function(x) {
-  x[is.na(x)] <- 0
+a1[,c(124:133,158:181)] <- lapply(a1[,c(124:133,158:181)], function(x) {
+  x[is.na(x)] <- 'No'
   x
 })
 
