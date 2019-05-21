@@ -257,7 +257,6 @@ a1[,c(124:133,158:181)] <- lapply(a1[,c(124:133,158:181)], function(x) {
 
 
 
-
 ################################################################################
 # Create some more variables...
 
@@ -379,7 +378,11 @@ a1$edu4 <- rowSums(a1[,c(76:77)], na.rm = T)
 
 
 
+# create a dataset with only PW cases and matched controls
 
+## get control ids that matched to PW cases
+
+a1pw <- a1[]
 
 
 

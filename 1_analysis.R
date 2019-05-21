@@ -140,28 +140,25 @@ table1_cvd <- do.call(rbind,lapply(c(paste0(cvdvars,'_p'),
 table1_cvd <- data.frame(cbind(row.names(table1_cvd), table1_cvd))
 
 
-## compare between Pathways cases and controls
+## compare between Pathways cases and non-PW cases
 
 table1_cvd_pw <- do.call(rbind,lapply(c(paste0(cvdvars,'_p'),
-                                     paste0(cvdvars,'_i')),tab1))
+                                     paste0(cvdvars,'_i')),tab2))
 
-table1_cvd_pw <- cbind(row.names(table1_cvd_pw), table1_cvd_pw)
+table1_cvd_pw <- data.frame(cbind(row.names(table1_cvd_pw), table1_cvd_pw))
 
 
 
 
 write.csv(table1_cvd[table1_cvd$V1=='Yes',], 'table 1 cvd.csv')
+write.csv(table1_cvd_pw[table1_cvd_pw$V1=='Yes',], 'table 1 cvd PW.csv')
 
 
 
 
-
-
-
-
-
-
-
+## compare prevalent CVD by age group
+cvdp_age <- data.frame(t(sapply(c(paste0(cvdvars,'_p')), function(x) prop.table(table(a1[,x], a1$agegrp),2)[1,])))
+write.csv(cvdp_age, 'cvd prev by age.csv')
 
 
 
