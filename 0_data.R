@@ -1,5 +1,5 @@
 # CVD and BC data cleaning
-# Zaixing Shi, 5/16/2019
+# Zaixing Shi, 7/2/2019
 
 library(tidyverse)
 library(haven)
@@ -19,17 +19,19 @@ cases <- as.data.frame(read_sas(paste0(pathpref,'Num0001_group1_cases.sas7bdat')
 controls <- as.data.frame(read_sas(paste0(pathpref,'Num0001_group1_controls.sas7bdat')))
 
 
-# import data received on 2019-04-17
+# import data received on 2019-06-27
+pathpref = 'Q:/HGREENLEE/Data Working/Pathways Heart Study/Aim 1 cases/2019-06-27/'
+cases_new <- as.data.frame(read_sas(paste0(pathpref,'cases_final_27mar19.sas7bdat')))
+cases_tumor <- as.data.frame(read_sas(paste0(pathpref,'cases_tumor_char_26jun19.sas7bdat')))
+
+# import controls data received on 2019-04-17
 pathpref = 'Q:/HGREENLEE/Data Working/Pathways Heart Study/Aim 1 cases/2019-04-17/'
-## updated cases and controls data
-cases_new <- as.data.frame(read_sas(paste0(pathpref,'cases.sas7bdat')))
 controls1 <- as.data.frame(read_sas(paste0(pathpref,'controls_group1.sas7bdat')))
 controls2 <- as.data.frame(read_sas(paste0(pathpref,'controls_group1.sas7bdat')))
 
 ## risk factor data
 bmi <- as.data.frame(read_sas(paste0(pathpref,'bmi.sas7bdat')))
 bp <- as.data.frame(read_sas(paste0(pathpref,'bp.sas7bdat')))
-labs <- as.data.frame(read_sas(paste0(pathpref,'labs.sas7bdat')))
 lipid <- as.data.frame(read_sas(paste0(pathpref,'dyslipidemia.sas7bdat')))
 diab <- as.data.frame(read_sas(paste0(pathpref,'diabetes.sas7bdat')))
 smok <- as.data.frame(read_sas(paste0(pathpref,'smoking.sas7bdat')))
@@ -40,10 +42,15 @@ menop <- as.data.frame(read_sas(paste0(pathpref,'menopause.sas7bdat')))
 parity <- as.data.frame(read_sas(paste0(pathpref,'parity.sas7bdat')))
 census <- as.data.frame(read_sas(paste0(pathpref,'census.sas7bdat')))
 
-# import CVD outcome data recevied on 5/1/2019
-pathpref = 'Q:/HGREENLEE/Data Working/Pathways Heart Study/CVD outcome/2019-05-16/'
-cvd <- as.data.frame(read_sas(paste0(pathpref,'cvd_outcomes_12moprior_thruDec2018_15may19.sas7bdat')))
+# import CVD outcome data recevied on 6/27/2019
+pathpref = 'Q:/HGREENLEE/Data Working/Pathways Heart Study/Aim 1 cases/2019-06-27/'
+cvd <- as.data.frame(read_sas(paste0(pathpref,'cvd_events.sas7bdat')))
 
+# import censoring events received on 6/27/2019
+censor <- as.data.frame(read_sas(paste0(pathpref,'censoring_27jun19.sas7bdat')))
+
+# import updated lab data received on 6/27/2019 
+labs <- as.data.frame(read_sas(paste0(pathpref,'labs.sas7bdat')))
 
 
 
@@ -63,9 +70,8 @@ gg_miss_var(controls, show_pct =TRUE) + labs(y = "% missing, Controls")
 dev.off()
 
 
-# combine old and new cases data
-cases$CVD_studyid <- cases$case_id 
-cases <- merge(cases, cases_new, by=names(cases_new)[names(cases_new) %in% names(cases)])
+# combine case and tumor characteristics data
+cases <- merge(cases_new, cases_tumor, by='CVD_studyid')
 
 # stack cases and controls 1, matched on age and race/ethnicity
 
