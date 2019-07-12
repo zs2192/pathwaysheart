@@ -1,5 +1,5 @@
-# CVD and BC data cleaning
-# Zaixing Shi, 7/2/2019
+# Pathways Heart Study - Aim 1 data cleaning
+# Zaixing Shi, 7/5/2019
 
 library(tidyverse)
 library(haven)
@@ -13,23 +13,18 @@ library(reshape2)
 ################################################################################
 # Load data
 
-# import data received on 2018-06-20
-pathpref='Q:/HGREENLEE/Data Working/Pathways Heart Study/Aim 1 cases/2018-06-20/'
-cases <- as.data.frame(read_sas(paste0(pathpref,'Num0001_group1_cases.sas7bdat')))
-controls <- as.data.frame(read_sas(paste0(pathpref,'Num0001_group1_controls.sas7bdat')))
-
-
-# import data received on 2019-06-27
+# import cases data received on 2019-06-27
 pathpref = 'Q:/HGREENLEE/Data Working/Pathways Heart Study/Aim 1 cases/2019-06-27/'
 cases_new <- as.data.frame(read_sas(paste0(pathpref,'cases_final_27mar19.sas7bdat')))
 cases_tumor <- as.data.frame(read_sas(paste0(pathpref,'cases_tumor_char_26jun19.sas7bdat')))
 
-# import controls data received on 2019-04-17
-pathpref = 'Q:/HGREENLEE/Data Working/Pathways Heart Study/Aim 1 cases/2019-04-17/'
+# import controls data received on 2019-07-03
+pathpref = 'Q:/HGREENLEE/Data Working/Pathways Heart Study/Aim 1 cases/2019-07-03/'
 controls1 <- as.data.frame(read_sas(paste0(pathpref,'controls_group1.sas7bdat')))
 controls2 <- as.data.frame(read_sas(paste0(pathpref,'controls_group1.sas7bdat')))
 
-## risk factor data
+## risk factor data received on 4/17/2019
+pathpref = 'Q:/HGREENLEE/Data Working/Pathways Heart Study/Aim 1 cases/2019-04-17/'
 bmi <- as.data.frame(read_sas(paste0(pathpref,'bmi.sas7bdat')))
 bp <- as.data.frame(read_sas(paste0(pathpref,'bp.sas7bdat')))
 lipid <- as.data.frame(read_sas(paste0(pathpref,'dyslipidemia.sas7bdat')))
@@ -37,7 +32,7 @@ diab <- as.data.frame(read_sas(paste0(pathpref,'diabetes.sas7bdat')))
 smok <- as.data.frame(read_sas(paste0(pathpref,'smoking.sas7bdat')))
 smok6 <- as.data.frame(read_sas(paste0(pathpref,'smoking_6months.sas7bdat')))
 
-## menopause, parity, census
+## menopause, parity, census data received on 4/17/2019
 menop <- as.data.frame(read_sas(paste0(pathpref,'menopause.sas7bdat')))
 parity <- as.data.frame(read_sas(paste0(pathpref,'parity.sas7bdat')))
 census <- as.data.frame(read_sas(paste0(pathpref,'census.sas7bdat')))
@@ -69,16 +64,25 @@ png('control_missing.png', height=3.5, width = 2.5, unit='in', res=200)
 gg_miss_var(controls, show_pct =TRUE) + labs(y = "% missing, Controls")
 dev.off()
 
-
-# combine case and tumor characteristics data
-cases <- merge(cases_new, cases_tumor, by='CVD_studyid')
-
-# stack cases and controls 1, matched on age and race/ethnicity
-
 # change all variables to lower case 
-names(cases) <- tolower(names(cases))
+names(cases_new) <- tolower(names(cases_new))
+names(cases_tumor) <- tolower(names(cases_tumor))
 names(controls1) <- tolower(names(controls1))
 
+# combine case and tumor characteristics data
+cases <- merge(cases_new[,c("cvd_studyid","gender","raceethn1","birth_year",
+                            "n_controls_group1","n_controls_group2","cops2")], 
+               cases_tumor, by="cvd_studyid")
+
+# create another surgery date var for cases and controls for risk factor data selection
+cases$rf_date <- cases$surg_date
+## fill patients without surg_date with dxdate plus median days between dx to surg
+cases$rf_date[which(is.na(cases$rf_date))] <- cases$dxdate[which(is.na(cases$rf_date))]+
+                                              as.numeric(median(cases$surg_date-cases$dxdate, na.rm=T))
+
+controls1$rf_date <- cases$rf_date[match(controls1$case_id,cases$cvd_studyid)]
+
+# stack cases and controls 1, matched on age and race/ethnicity
 # reorder controls1 variable to be the same as cases
 controls1$group <- 'Control'
 controls1$dxage <- controls1$index_age
@@ -97,24 +101,33 @@ all <- rbind(cases, controls1)
 
 ################################################################################
 # Select labs data
-# Date range: closest measure within 24 mos prior to index date and before surgery
+# Date range: closest measure within 36 mos prior to index date and before surgery
+
+# impute missing surgery dates
+cases$dx2surgdays <- as.numeric(cases$surg_date - cases$index_date) 
+cases$surg_date[which(is.na(cases$surg_date) & cases$surg_sum>0)] <- 
+  cases$index_date[which(is.na(cases$surg_date) & cases$surg_sum>0)] + 
+  median(cases$dx2surgdays,na.rm=T)
+
 
 # BMI
-bmi$datediff <- as.numeric(bmi$MEASURE_DATE - bmi$index_date)
-bmi1 <- bmi[which(bmi$datediff %in% -365:0),]
-bmi1 <- ddply(bmi1, .(CVD_studyid), function(d){
-  d <- d[which(d$datediff==max(d$datediff)),]
+names(bmi) <- tolower(names(bmi))
+bmi <- merge(bmi, all[,c("cvd_studyid","dxdate",'rf_date')], by='cvd_studyid')
+bmi1 <- bmi[which(bmi$measure_date >= bmi$index_date-365*3 & bmi$measure_date <= bmi$rf_date),]
+bmi1$datediff <- abs(as.numeric(bmi1$measure_date - bmi1$index_date))
+bmi1 <- ddply(bmi1, .(cvd_studyid), function(d){
+  d <- d[which(d$datediff==min(d$datediff)),]
   d
 })
 
 ## clean up BMI
-bmi1$bmi_num <- gsub('<|>|>=','',bmi1$BMI)
+bmi1$bmi_num <- gsub('<|>|>=','',bmi1$bmi)
 bmi1$bmi_num <- as.numeric(gsub('-.*','',bmi1$bmi_num))
 
 ## aggregate multiple values within same day
 bmi1 <- aggregate(x = bmi1$bmi_num, 
-                  by = list(bmi1$CVD_studyid,bmi1$index_date,
-                            bmi1$MEASURE_DATE,bmi1$datediff), 
+                  by = list(bmi1$cvd_studyid,bmi1$index_date,
+                            bmi1$measure_date,bmi1$datediff), 
                   mean, na.rm=T)
 names(bmi1) <- c('cvd_studyid','index_date','bmi_measure_date','bmi_datediff','bmi')
 
@@ -123,7 +136,7 @@ names(bmi1) <- c('cvd_studyid','index_date','bmi_measure_date','bmi_datediff','b
 
 # BP
 bp$datediff <- as.numeric(bp$MEASURE_DATE - bp$index_date)
-bp1 <- bp[which(bp$datediff %in% -365:0),]
+bp1 <- bp[which(bp$datediff %in% -365*3:0),]
 bp1 <- ddply(bp1, .(CVD_studyid), function(d){
   d <- d[which(d$datediff==max(d$datediff)),]
   d
@@ -150,9 +163,16 @@ names(bp1) <- c('cvd_studyid','index_date','bp_measure_date','bp_datediff','syst
 
 # Labs
 labs$result <- as.numeric(labs$RESULT_C)
+
+
+
+# merge surgery date
+labs <- merge(labs,cases[,c("cvd_studyid", "surg_date")],
+              by.x='CVD_studyid', by.y='cvd_studyid')
+
 labs$datediff <- as.numeric(labs$test_dt - labs$index_date)
 
-labs1 <- labs[which(labs$datediff %in% -365:0),]
+labs1 <- labs[which(labs$datediff %in% -365*3:0),]
 
 labs2 <- ddply(labs1, .(CVD_studyid,TEST_TYPE), function(d){
   d <- d[which(d$datediff==max(d$datediff)),]
@@ -180,14 +200,12 @@ smok1 <- ddply(smok1, .(CVD_studyid), function(d){
 ################################################################################
 # Clean CVD outcome data
 
-## keep events after index date
-
-cvd$CONDITION[cvd$CONDITION=='Percutaneous transluminal coronary angioplasty status'] <- 'Percutaneous transluminal coronary angioplasty'
-
+## consolidate duplicated cvd group
+cvd$CVD_condition[cvd$CVD_condition=='Percutaneous transluminal coronary angioplasty status'] <- 'Percutaneous transluminal coronary angioplasty'
 
 ## make long to wide format, keep 1st occurence of each condition only
 ### condition groups
-cvd2 <- dcast(data=cvd, CVD_STUDYID+index_date~group, value.var = 'adate', min,na.rm=T)
+cvd2 <- dcast(data=cvd, CVD_STUDYID+index_date~CVD_group, value.var = 'adate', min,na.rm=T)
 
 cvd2[,-1:-2] <- lapply(cvd2[,-1:-2], function(x) as.Date(x, origin='1970-01-01'))
 cvd2[,-1:-2] <- lapply(cvd2[,-1:-2], function(x) as.Date(as.character(x)))
@@ -207,7 +225,7 @@ cvd2[,cvd_grp] <- lapply(cvd2[,-1:-2], function(x) {
 
 
 ### condition
-cvd3 <- dcast(data=cvd, CVD_STUDYID+index_date~CONDITION, value.var = 'adate', min,na.rm=T)
+cvd3 <- dcast(data=cvd, CVD_STUDYID+index_date~CVD_condition, value.var = 'adate', min,na.rm=T)
 
 cvd3[,-1:-2] <- lapply(cvd3[,-1:-2], function(x) as.Date(x, origin='1970-01-01'))
 cvd3[,-1:-2] <- lapply(cvd3[,-1:-2], function(x) as.Date(as.character(x)))
@@ -232,12 +250,11 @@ write.csv(cvd_cond,'cvd_cond.csv')
 ################################################################################
 # Merge all data
 
-
 ## combine all data into a list
 datalist <- list(all, 
                  bmi1[,c("cvd_studyid","bmi_measure_date", "bmi_datediff", "bmi")],
                  bp1[,c("cvd_studyid","bp_measure_date", "bp_datediff","systolic","diastolic")],
-                 labs2[,c("CVD_studyid","GLU_F","GTT75_PRE","HDL","HGBA1C","LDL_CLC_NS","TOT_CHOLES","TRIGL_NS" )],
+                 labs2[,c("CVD_studyid","GLU_F","GTT75_PRE","HDL","HGBA1C","LDL_CLC_NS","TOT_CHOLES","TRIGL_NS")],
                  diab[,c(1,4:10)],lipid[,2:4], 
                  smok1[,c(2,5:8)],menop[,c(1,3)],parity[,c(1,5,6)],
                  census[,c(2,5:48)],
@@ -249,7 +266,6 @@ datalist <- lapply(datalist,function(x){
   names(x) <- tolower(names(x))
   x
 })
-
 
 ## merge all data by CVD_studyid
 a1 <- Reduce(function(...) merge(...,by='cvd_studyid', all.x=T), datalist)
@@ -266,13 +282,10 @@ a1[,c(124:133,158:181)] <- lapply(a1[,c(124:133,158:181)], function(x) {
 ################################################################################
 # Create some more variables...
 
-
-
 # recode categorical variables
 # age groups
 a1$agegrp <- cut(a1$dxage, c(0, 40, 50, 60, 70, 80, 101), right=F,
                   labels = c('<40 yo','40-49','50-59','60-69','70-79','80+ yo'))
-
 
 # race
 a1$raceethn1 <- factor(a1$raceethn1, 
@@ -302,7 +315,6 @@ a1[,c('tri_neg','chemo_yn','rad_yn','horm_yn')] <-
 a1$ajcc_stage <- factor(a1$ajcc_stage,
                          labels = c('Stage I','Stage II', 'Stage III','Stage IV'))
 
-
 # convert dxdate to date
 a1$dxdate <- as.Date(a1$dxdate, origin = '1970-01-01')
 
@@ -328,8 +340,6 @@ a1$bmicat[is.na(a1$bmicat)] <- 'Unknown'
 a1$bmicat <- factor(a1$bmicat,
                     levels = c('Underweight','Normal','Overweight','Obese I','Obese II+','Unknown'))
 
-
-
 # smoking status
 a1$smok1 <- a1$tobacco_use
 a1$smok1[a1$smok %in% c('P','Q')] <- 'Quited/past/former'
@@ -339,7 +349,6 @@ a1$smok1[a1$smok %in% c('U')] <- 'Unknown'
 a1$smok1[is.na(a1$smok)] <- 'Unknown'
 
 a1$smok1 <- factor(a1$smok1, levels=c('Never smoker','Current smoker','Quited/past/former','Unknown'))
-
 
 # menopausal status
 a1$menop <- factor(a1$bl_meno_status)
@@ -353,7 +362,6 @@ a1$gravid <- cut(as.numeric(a1$ob_gravidity), c(0,1,2,3,Inf),right=F,
 a1$parity <- cut(as.numeric(a1$ob_parity), c(0,1,2,3,Inf),right=F,
                  labels = c('0','1','2','3+'))
 
-
 # diabetes
 a1[,c("inpatient_flg","outpatient_flg","pharmacy_flg","a1c_flg",
              "fgrg_flg","a1cfgrg_flg")] <- lapply(a1[,c("inpatient_flg","outpatient_flg","pharmacy_flg","a1c_flg",
@@ -364,12 +372,10 @@ a1[,c("inpatient_flg","outpatient_flg","pharmacy_flg","a1c_flg",
                                                     x
                                                   })
 
-
 # dyslipidemia
 a1$dyslipidemia.x[is.na(a1$dyslipidemia.x)] <- 0
 a1$dyslipidemia.x <- factor(a1$dyslipidemia.x,levels=c(1,0),
                           labels = c('Yes','No/Unknown'))
-
 
 # household income
 a1$hhincome1 <- rowSums(a1[,c(96:104)], na.rm = T)
@@ -381,8 +387,6 @@ a1$edu1 <- rowSums(a1[,c(70:72)], na.rm = T)
 a1$edu2 <- rowSums(a1[,c(73:74)], na.rm = T)
 a1$edu3 <- a1$education6
 a1$edu4 <- rowSums(a1[,c(76:77)], na.rm = T)
-
-
 
 # create a dataset with only PW cases and matched controls
 
