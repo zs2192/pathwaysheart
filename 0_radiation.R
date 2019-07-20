@@ -26,23 +26,106 @@ rad_dose <- sapply(tlist, function(x){
 # extract data from type 1 report
 
 ## cumulative dose
-sapply(rad_dose, function(x){
+cum_dose <- unlist(sapply(rad_dose, function(x){
   x <- unlist(x)
-  cum_dose <- str_extract(string = x, pattern = "date[:]\\s+[0-9]+\\s+cGy|[0-9]+\\s+cGy\\s+out")
-  cum_dose <- str_extract(string=cum_dose, pattern="[0-9]+")
-  #total_dose[!is.na(total_dose)]
-})
-       
-## total planned dose
-unlist(sapply(rad_dose, function(x){
-  x <- unlist(x)
-  total_dose <- str_extract(string = x, pattern = "of\\s*[A-Za-z]*\\s*[0-9]*\\s*cGy|of\\s*[0-9]*\\s*cGy")
-  total_dose <- str_extract(string=total_dose, pattern="[0-9]+")
-  total_dose <- total_dose[!is.na(total_dose)]
-  if(length(total_dose)==0){
+  d <- str_extract(string = x, pattern = "date[:]\\s*[0-9]+\\s*cGy|[0-9]+\\s*cGy\\s+out")
+  d <- str_extract(string=d, pattern="[0-9]+")
+  d <- d[!is.na(d)]
+  if(length(d)==0){
     NA
   }
   else {
-    total_dose
+    d
   }
 }))
+       
+## total planned dose
+total_dose <- unlist(sapply(rad_dose, function(x){
+  x <- unlist(x)
+  d <- str_extract(string = x, pattern = "of\\s*[A-Za-z]*\\s*[0-9]*\\s*cGy|of\\s*[0-9]*\\s*cGy")
+  d <- str_extract(string=d, pattern="[0-9]+")
+  d <- d[!is.na(d)]
+  if(length(d)==0){
+    NA
+  }
+  else {
+    d
+  }
+}))
+
+## number of fractions or dose per fraction
+fraction_dose <- unlist(sapply(rad_dose, function(x){
+  x <- unlist(x)
+  d <- str_extract(string = x, pattern = "[0-9]*\\s*([A-Za-z ]*|[A-Za-z ]*\\/)fraction")
+  d <- str_extract(string=d[grepl('cGy',d)], pattern="[0-9]+")
+  #d <- str_extract(string=d[!grepl('cGy',d)], pattern="[0-9]+")
+  d <- d[!is.na(d)]
+  if(length(d)==0){
+    NA
+  }
+  else {
+    d
+  }
+}))
+
+fraction_num <- unlist(sapply(rad_dose, function(x){
+  x <- unlist(x)
+  d <- str_extract(string = x, pattern = "[0-9]*\\s*([A-Za-z ]*|[A-Za-z ]*\\/)fraction")
+  d <- str_extract(string=d[!grepl('cGy',d)], pattern="[0-9]+")
+  d <- unique(d[!is.na(d)])[1]
+  if(length(d)==0){
+    NA
+  }
+  else {
+    d
+  }
+}))
+
+## location
+location <- unlist(sapply(rad_dose, function(x){
+  x <- unlist(x)
+  d <- str_extract(string = x, pattern = "\\sto[A-Za-z ]*(breast|chest wall|brain)")
+  d <- gsub('(to the\\s*)|(to\\s*)','',d)
+  d <- d[!is.na(d)]
+  if(length(d)==0){
+    NA
+  }
+  else {
+    d
+  }
+}))
+
+## start date
+start_date <- unlist(sapply(rad_dose, function(x){
+  x <- unlist(x)
+  d <- str_extract(string = x, pattern = "(started|Started|began|Began)\\s*[A-Za-z ]*[0-9]*\\/[0-9]*\\/[0-9]*")
+  d <- str_extract(string = d, pattern = "[0-9]*\\/[0-9]*\\/[0-9]*")
+  d <- d[!is.na(d)]
+  if(length(d)==0){
+    NA
+  }
+  else {
+    d
+  }
+}))
+
+## end date
+end_date <- unlist(sapply(rad_dose, function(x){
+  x <- unlist(x)
+  d <- str_extract(string = x, pattern = "(complete|anticipate|fini)\\s*[A-Za-z ]*[0-9]*\\/[0-9]*\\/[0-9]*")
+  d <- str_extract(string = d, pattern = "[0-9]*\\/[0-9]*\\/[0-9]*")
+  d <- d[!is.na(d)]
+  if(length(d)==0){
+    NA
+  }
+  else {
+    d
+  }
+}))
+
+
+# combine extracted data with original data
+t1_new <- cbind(t1, cum_dose, total_dose, fraction_dose, fraction_num, location, start_date, end_date)
+
+write.csv(t1_new, 'Q:/HGREENLEE/Data Working/Pathways Heart Study/Radiation data/t1_extract.csv')
+

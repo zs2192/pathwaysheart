@@ -1,5 +1,5 @@
 # Pathways Heart Study - Aim 1 data cleaning
-# Zaixing Shi, 7/5/2019
+# Zaixing Shi, 7/20/2019
 
 library(tidyverse)
 library(haven)
@@ -8,7 +8,12 @@ library(dplyr)
 library(plyr)
 library(naniar)
 library(reshape2)
+library(doParallel)
 
+# setup parallel computing
+nodes <- detectCores()
+cl <- makeCluster(nodes)
+registerDoParallel(cl)
 
 ################################################################################
 # Load data
@@ -118,7 +123,7 @@ bmi1$datediff <- abs(as.numeric(bmi1$measure_date - bmi1$index_date))
 bmi1 <- ddply(bmi1, .(cvd_studyid), function(d){
   d <- d[which(d$datediff==min(d$datediff)),]
   d
-})
+},.parallel=TRUE)
 
 ## clean up BMI
 bmi1$bmi_num <- gsub('<|>|>=','',bmi1$bmi)
@@ -135,25 +140,27 @@ names(bmi1) <- c('cvd_studyid','index_date','bmi_measure_date','bmi_datediff','b
 
 
 # BP
-bp$datediff <- as.numeric(bp$MEASURE_DATE - bp$index_date)
-bp1 <- bp[which(bp$datediff %in% -365*3:0),]
-bp1 <- ddply(bp1, .(CVD_studyid), function(d){
-  d <- d[which(d$datediff==max(d$datediff)),]
+names(bp) <- tolower(names(bp))
+bp <- merge(bp, all[,c("cvd_studyid","dxdate",'rf_date')], by='cvd_studyid')
+bp1 <- bp[which(bp$measure_date >= bp$index_date-365*2 & bp$measure_date <= bp$rf_date),]
+bp1$datediff <- abs(as.numeric(bp1$measure_date - bp1$index_date))
+bp1 <- ddply(bp1, .(cvd_studyid), function(d){
+  d <- d[which(d$datediff==min(d$datediff)),]
   d
-})
+},.parallel=TRUE)
 
 ## clean up bp
 bp1$hypertension <- factor(bp1$hypertension,
                            labels = c('Normal','Elevated','Stage 1','Stage 2','Undefined'))
 
 ## aggregate multiple values within same day
-systol <- aggregate(x = bp1$SYSTOLIC, 
-                  by = list(bp1$CVD_studyid,bp1$index_date,
-                            bp1$MEASURE_DATE,bp1$datediff), 
+systol <- aggregate(x = bp1$systolic, 
+                  by = list(bp1$cvd_studyid,bp1$index_date,
+                            bp1$measure_date,bp1$datediff), 
                   mean, na.rm=T)
-diastol <- aggregate(x = bp1$DIASTOLIC, 
-                   by = list(bp1$CVD_studyid,bp1$index_date,
-                             bp1$MEASURE_DATE,bp1$datediff), 
+diastol <- aggregate(x = bp1$diastolic, 
+                   by = list(bp1$cvd_studyid,bp1$index_date,
+                             bp1$measure_date,bp1$datediff), 
                    mean, na.rm=T)
 
 bp1 <- merge(systol, diastol, by=c("Group.1","Group.2", "Group.3" ,"Group.4"))
@@ -164,35 +171,31 @@ names(bp1) <- c('cvd_studyid','index_date','bp_measure_date','bp_datediff','syst
 # Labs
 labs$result <- as.numeric(labs$RESULT_C)
 
-
-
 # merge surgery date
-labs <- merge(labs,cases[,c("cvd_studyid", "surg_date")],
-              by.x='CVD_studyid', by.y='cvd_studyid')
-
-labs$datediff <- as.numeric(labs$test_dt - labs$index_date)
-
-labs1 <- labs[which(labs$datediff %in% -365*3:0),]
-
-labs2 <- ddply(labs1, .(CVD_studyid,TEST_TYPE), function(d){
-  d <- d[which(d$datediff==max(d$datediff)),]
+names(labs) <- tolower(names(labs))
+labs <- merge(labs, all[,c("cvd_studyid","dxdate",'rf_date')], by='cvd_studyid')
+labs1 <- labs[which(labs$test_dt >= labs$index_date-365*3 & labs$test_dt <= labs$rf_date),]
+labs1$datediff <- abs(as.numeric(labs1$test_dt - labs1$index_date))
+system.time(labs1 <- ddply(labs1, .(cvd_studyid,test_type), function(d){
+  d <- d[which(d$datediff==min(d$datediff)),]
   d
-})
+},.parallel=TRUE))
 
-labs2 <- dcast(data=labs2,CVD_studyid+index_date+control_group+caco~TEST_TYPE,
+labs2 <- dcast(data=labs1,cvd_studyid+index_date+control_group~test_type,
                 value.var = 'result', mean, na.rm=T)
 
+# save a copy of labs2 data
+write_csv(labs2,'labs2.csv')
 
+# Smoking - data pending
+#smok$datediff <- as.numeric(smok$CONTACT_DATE - smok$index_date)
 
-# Smoking
-smok$datediff <- as.numeric(smok$CONTACT_DATE - smok$index_date)
+#smok1 <- smok[which(smok$datediff %in% -365:0),]
 
-smok1 <- smok[which(smok$datediff %in% -365:0),]
-
-smok1 <- ddply(smok1, .(CVD_studyid), function(d){
-  d <- d[order(d$datediff, decreasing = T),]
-  d[1,]
-})
+#smok1 <- ddply(smok1, .(CVD_studyid), function(d){
+#  d <- d[order(d$datediff, decreasing = T),]
+#  d[1,]
+#})
 
 
 
@@ -221,6 +224,20 @@ cvd2[,cvd_grp] <- lapply(cvd2[,-1:-2], function(x) {
   y
   })
 
+cvd2list <- lapply(cvd_grp, function(x){
+  dates <- eval(parse(text=paste0("dcast(data=cvd2, CVD_STUDYID~",x,", value.var = '",x,"_dt')")))
+  prev <- ifelse(cvd2[,x]=='Prevalent',1,0)
+  inc <- ifelse(cvd2[,x]=='Incident',1,0)
+  sum <- data.frame(cbind(prev,inc,dates))
+  sum <- sum[,c('CVD_STUDYID','prev','inc','Incident')]
+  sum$Incident <- as.Date(sum$Incident, origin='1970-01-01')
+  names(sum) <- c('CVD_STUDYID',paste0(x,c('_prev','_inc','_incdt')))
+  sum
+})
+
+cvd2list[[10]] <- cvd2
+cvd2_final <- Reduce(function(...) merge(...,by='CVD_STUDYID', all.x=T), cvd2list)
+
 
 
 
@@ -231,6 +248,9 @@ cvd3[,-1:-2] <- lapply(cvd3[,-1:-2], function(x) as.Date(x, origin='1970-01-01')
 cvd3[,-1:-2] <- lapply(cvd3[,-1:-2], function(x) as.Date(as.character(x)))
 
 names(cvd3) <- gsub('/| ','_',names(cvd3))
+names(cvd3) <- gsub('&_|\\(|\\)','',names(cvd3))
+names(cvd3)[18] <- "Percutaneous_coronary_intervention_PCI"
+
 cvd_cond <- names(cvd3)[-1:-2]
 names(cvd3)[-1:-2] <- paste0(names(cvd3)[-1:-2],'_dt')
 cvd3[,cvd_cond] <- lapply(cvd3[,-1:-2],  function(x) {
@@ -240,11 +260,32 @@ cvd3[,cvd_cond] <- lapply(cvd3[,-1:-2],  function(x) {
   y
 })
 
+cvd3list <- lapply(cvd_cond, function(x){
+  dates <- eval(parse(text=paste0("dcast(data=cvd3, CVD_STUDYID~",x,", value.var = '",x,"_dt')")))
+  prev <- ifelse(cvd3[,x]=='Prevalent',1,0)
+  inc <- ifelse(cvd3[,x]=='Incident',1,0)
+  sum <- data.frame(cbind(prev,inc,dates))
+  sum <- sum[,c('CVD_STUDYID','prev','inc','Incident')]
+  sum$Incident <- as.Date(sum$Incident, origin='1970-01-01')
+  names(sum) <- c('CVD_STUDYID',paste0(x,c('_prev','_inc','_incdt')))
+  sum
+})
+
+cvd3list[[24]] <- cvd3
+cvd3_final <- Reduce(function(...) merge(...,by='CVD_STUDYID', all.x=T), cvd3list)
+
 
 
 # export condition list
-write.csv(cvd_grp,'cvd_grp.csv')
-write.csv(cvd_cond,'cvd_cond.csv')
+write_csv(cvd_grp,'cvd_grp.csv')
+write_csv(cvd_cond,'cvd_cond.csv')
+
+# save a copy of the cvd data
+write_csv(cvd2_final,'cvd2_final.csv')
+write_csv(cvd3_final,'cvd3_final.csv')
+
+
+
 
 
 ################################################################################
@@ -252,14 +293,14 @@ write.csv(cvd_cond,'cvd_cond.csv')
 
 ## combine all data into a list
 datalist <- list(all, 
-                 bmi1[,c("cvd_studyid","bmi_measure_date", "bmi_datediff", "bmi")],
+                 bmi1[,c("cvd_studyid","bmi_measure_date", "bmi")],
                  bp1[,c("cvd_studyid","bp_measure_date", "bp_datediff","systolic","diastolic")],
-                 labs2[,c("CVD_studyid","GLU_F","GTT75_PRE","HDL","HGBA1C","LDL_CLC_NS","TOT_CHOLES","TRIGL_NS")],
+                 labs2[,c("cvd_studyid","GLU_F","GTT75_PRE","HDL","HGBA1C","LDL_CLC_NS","TOT_CHOLES","TRIGL_NS")],
                  diab[,c(1,4:10)],lipid[,2:4], 
                  smok1[,c(2,5:8)],menop[,c(1,3)],parity[,c(1,5,6)],
                  census[,c(2,5:48)],
-                 cvd2[,-2],
-                 cvd3[,-2])
+                 cvd2_final[,-grep('index_date',names(cvd2_final))],
+                 cvd3_final[,-grep('index_date',names(cvd3_final))])
 
 ## make all var names lower case
 datalist <- lapply(datalist,function(x){
@@ -271,10 +312,15 @@ datalist <- lapply(datalist,function(x){
 a1 <- Reduce(function(...) merge(...,by='cvd_studyid', all.x=T), datalist)
 
 ## set all NA for cvd outcomes as 0
-a1[,c(124:133,158:181)] <- lapply(a1[,c(124:133,158:181)], function(x) {
+a1[,c(155:163,256:278)] <- lapply(a1[,c(155:163,256:278)], function(x) {
   x[is.na(x)] <- 'No'
   x
 })
+
+# save a copy of the merged data
+write_csv(a1,'a1.csv')
+
+
 
 
 
@@ -373,26 +419,70 @@ a1[,c("inpatient_flg","outpatient_flg","pharmacy_flg","a1c_flg",
                                                   })
 
 # dyslipidemia
-a1$dyslipidemia.x[is.na(a1$dyslipidemia.x)] <- 0
-a1$dyslipidemia.x <- factor(a1$dyslipidemia.x,levels=c(1,0),
+a1$dyslipidemia[is.na(a1$dyslipidemia)] <- 0
+a1$dyslipidemia <- factor(a1$dyslipidemia,levels=c(1,0),
                           labels = c('Yes','No/Unknown'))
 
 # household income
-a1$hhincome1 <- rowSums(a1[,c(96:104)], na.rm = T)
-a1$hhincome2 <- rowSums(a1[,c(105:107)], na.rm = T)
-a1$hhincome3 <- rowSums(a1[,c(108:111)], na.rm = T)
+a1$hhincome1 <- rowSums(a1[,grep('famincome[1-9]$',names(a1), value=T)], na.rm = T)
+a1$hhincome2 <- rowSums(a1[,grep('famincome1[0-2]',names(a1), value=T)], na.rm = T)
+a1$hhincome3 <- rowSums(a1[,grep('famincome1[3-6]',names(a1), value=T)], na.rm = T)
 
 # education
-a1$edu1 <- rowSums(a1[,c(70:72)], na.rm = T)
-a1$edu2 <- rowSums(a1[,c(73:74)], na.rm = T)
+a1$edu1 <- rowSums(a1[,grep('education[1-3]$',names(a1), value=T)], na.rm = T)
+a1$edu2 <- rowSums(a1[,grep('education[4-5]$',names(a1), value=T)], na.rm = T)
 a1$edu3 <- a1$education6
-a1$edu4 <- rowSums(a1[,c(76:77)], na.rm = T)
+a1$edu4 <- rowSums(a1[,grep('education[7-8]$',names(a1), value=T)], na.rm = T)
 
-# create a dataset with only PW cases and matched controls
 
-## get control ids that matched to PW cases
 
-a1pw <- a1[]
+
+
+
+
+################################################################################
+# Create datasets with cases who received treatment and their matched controls
+
+# pull IDs of cases receiving chemo, HT and RT
+id_chemo <- cases$cvd_studyid[which(cases$chemo_yn==1)]
+id_horm <- cases$cvd_studyid[which(cases$horm_yn==1)]
+id_rad <- cases$cvd_studyid[which(cases$rad_yn==1)]
+
+# select subsample based on these ids
+a1chemo <- a1[which(a1$cvd_studyid %in% id_chemo | a1$case_id %in% id_chemo),]
+a1horm <- a1[which(a1$cvd_studyid %in% id_horm | a1$case_id %in% id_horm),]
+a1rad <- a1[which(a1$cvd_studyid %in% id_rad | a1$case_id %in% id_rad),]
+
+
+
+
+
+
+################################################################################
+# define CVD outcomes
+
+# combined event of ischemic heart disease, stroke/TIA, cardiomyopathy/heart failure
+
+a1$cvdcombo_grp <- 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
