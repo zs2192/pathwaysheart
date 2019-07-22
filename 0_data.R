@@ -1,3 +1,4 @@
+
 # Pathways Heart Study - Aim 1 data cleaning
 # Zaixing Shi, 7/20/2019
 
@@ -130,11 +131,10 @@ bmi1$bmi_num <- gsub('<|>|>=','',bmi1$bmi)
 bmi1$bmi_num <- as.numeric(gsub('-.*','',bmi1$bmi_num))
 
 ## aggregate multiple values within same day
-bmi1 <- aggregate(x = bmi1$bmi_num, 
-                  by = list(bmi1$cvd_studyid,bmi1$index_date,
-                            bmi1$measure_date,bmi1$datediff), 
+bmi2 <- aggregate(x = bmi1$bmi_num, 
+                  by = list(bmi1$cvd_studyid,bmi1$datediff), 
                   mean, na.rm=T)
-names(bmi1) <- c('cvd_studyid','index_date','bmi_measure_date','bmi_datediff','bmi')
+names(bmi2) <- c('cvd_studyid','bmi_datediff','bmi')
 
 
 
@@ -155,16 +155,14 @@ bp1$hypertension <- factor(bp1$hypertension,
 
 ## aggregate multiple values within same day
 systol <- aggregate(x = bp1$systolic, 
-                  by = list(bp1$cvd_studyid,bp1$index_date,
-                            bp1$measure_date,bp1$datediff), 
+                  by = list(bp1$cvd_studyid,bp1$datediff), 
                   mean, na.rm=T)
 diastol <- aggregate(x = bp1$diastolic, 
-                   by = list(bp1$cvd_studyid,bp1$index_date,
-                             bp1$measure_date,bp1$datediff), 
+                   by = list(bp1$cvd_studyid,bp1$datediff), 
                    mean, na.rm=T)
 
-bp1 <- merge(systol, diastol, by=c("Group.1","Group.2", "Group.3" ,"Group.4"))
-names(bp1) <- c('cvd_studyid','index_date','bp_measure_date','bp_datediff','systolic','diastolic')
+bp2 <- merge(systol, diastol, by=c("Group.1","Group.2"))
+names(bp2) <- c('cvd_studyid','bp_datediff','systolic','diastolic')
 
 
 
@@ -292,15 +290,15 @@ write_csv(cvd3_final,'cvd3_final.csv')
 # Merge all data
 
 ## combine all data into a list
-datalist <- list(all, 
-                 bmi1[,c("cvd_studyid","bmi_measure_date", "bmi")],
-                 bp1[,c("cvd_studyid","bp_measure_date", "bp_datediff","systolic","diastolic")],
+datalist <- list(all[,-grep("deathdt|enr_start|enr_end",names(all))], 
+                 bmi2,bp2,
                  labs2[,c("cvd_studyid","GLU_F","GTT75_PRE","HDL","HGBA1C","LDL_CLC_NS","TOT_CHOLES","TRIGL_NS")],
                  diab[,c(1,4:10)],lipid[,2:4], 
                  smok1[,c(2,5:8)],menop[,c(1,3)],parity[,c(1,5,6)],
                  census[,c(2,5:48)],
                  cvd2_final[,-grep('index_date',names(cvd2_final))],
-                 cvd3_final[,-grep('index_date',names(cvd3_final))])
+                 cvd3_final[,-grep('index_date',names(cvd3_final))],
+                 censor[,-c(2,7)])
 
 ## make all var names lower case
 datalist <- lapply(datalist,function(x){
@@ -312,10 +310,16 @@ datalist <- lapply(datalist,function(x){
 a1 <- Reduce(function(...) merge(...,by='cvd_studyid', all.x=T), datalist)
 
 ## set all NA for cvd outcomes as 0
-a1[,c(155:163,256:278)] <- lapply(a1[,c(155:163,256:278)], function(x) {
+a1[,tolower(c(cvd_grp,cvd_cond))] <- lapply(a1[,tolower(c(cvd_grp,cvd_cond))], function(x) {
   x[is.na(x)] <- 'No'
   x
 })
+
+a1[,grep('inc$|prev$',names(a1))] <- 
+  lapply(a1[,grep('inc$|prev$',names(a1))], function(x) {
+    x[is.na(x)] <- 0
+    x
+  })
 
 # save a copy of the merged data
 write_csv(a1,'a1.csv')
@@ -440,6 +444,58 @@ a1$edu4 <- rowSums(a1[,grep('education[7-8]$',names(a1), value=T)], na.rm = T)
 
 
 
+
+################################################################################
+# Define CVD outcomes
+
+# combined event of ischemic heart disease, stroke/TIA, cardiomyopathy/heart failure
+a1$cvdcombo_grp_inc <- ifelse(a1$ischemic_heart_disease_grp_inc==1 | 
+                            a1$stroke_tia_grp_inc==1 | 
+                            a1$cardiomyopathy_heart_failure_grp_inc==1, 1, 0)
+
+
+a1$cvdcombo_grp_incdt <- as.Date(apply(a1[,c("ischemic_heart_disease_grp_incdt",
+                                             "stroke_tia_grp_incdt",
+                                             "cardiomyopathy_heart_failure_grp_incdt")],
+                                       1,min,na.rm=T))
+
+
+# define censoring time
+a1$censor_dt <- as.Date(apply(a1[,c("death_date","enr_end","end_of_study")],1,min,na.rm=T))
+
+
+# calculate time of follow up
+a1$ischemic_heart_disease_grp_inc_fu <- as.numeric(a1$ischemic_heart_disease_grp_incdt-a1$index_date)
+a1$ischemic_heart_disease_grp_inc_fu[which(a1$ischemic_heart_disease_grp_inc==0)] <- 
+  as.numeric(a1$censor_dt[which(a1$ischemic_heart_disease_grp_inc==0)] - 
+               a1$index_date[which(a1$ischemic_heart_disease_grp_inc==0)])
+
+
+a1$stroke_tia_grp_inc_fu <- as.numeric(a1$stroke_tia_grp_incdt-a1$index_date)
+a1$stroke_tia_grp_inc_fu[which(a1$stroke_tia_grp_inc==0)] <- 
+  as.numeric(a1$censor_dt[which(a1$stroke_tia_grp_inc==0)] - 
+               a1$index_date[which(a1$stroke_tia_grp_inc==0)])
+
+
+a1$cardiomyopathy_heart_failure_grp_inc_fu <- as.numeric(a1$cardiomyopathy_heart_failure_grp_incdt-a1$index_date)
+a1$cardiomyopathy_heart_failure_grp_inc_fu[which(a1$cardiomyopathy_heart_failure_grp_inc==0)] <- 
+  as.numeric(a1$censor_dt[which(a1$cardiomyopathy_heart_failure_grp_inc==0)] - 
+               a1$index_date[which(a1$cardiomyopathy_heart_failure_grp_inc==0)])
+
+
+a1$cvdcombo_grp_inc_fu <- as.numeric(a1$cvdcombo_grp_incdt-a1$index_date)
+a1$cvdcombo_grp_inc_fu[which(a1$cvdcombo_grp_inc==0)] <- 
+  as.numeric(a1$censor_dt[which(a1$cvdcombo_grp_inc==0)] - 
+               a1$index_date[which(a1$cvdcombo_grp_inc==0)])
+
+
+
+
+
+
+
+
+
 ################################################################################
 # Create datasets with cases who received treatment and their matched controls
 
@@ -452,36 +508,6 @@ id_rad <- cases$cvd_studyid[which(cases$rad_yn==1)]
 a1chemo <- a1[which(a1$cvd_studyid %in% id_chemo | a1$case_id %in% id_chemo),]
 a1horm <- a1[which(a1$cvd_studyid %in% id_horm | a1$case_id %in% id_horm),]
 a1rad <- a1[which(a1$cvd_studyid %in% id_rad | a1$case_id %in% id_rad),]
-
-
-
-
-
-
-################################################################################
-# define CVD outcomes
-
-# combined event of ischemic heart disease, stroke/TIA, cardiomyopathy/heart failure
-
-a1$cvdcombo_grp <- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

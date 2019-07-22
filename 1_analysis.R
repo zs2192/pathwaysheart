@@ -9,6 +9,8 @@ library(dplyr)
 library(plyr)
 library(naniar)
 library(reshape2)
+library(survival)
+library(survminer)
 
 
 ################################################################################
@@ -235,9 +237,147 @@ dev.off()
 
 
 
+################################################################################
+# Aim 1a - Survival analysis
+
+# K-M analysis
+
+# ischemic heart disease
+surv_object <- Surv(time = a1$ischemic_heart_disease_grp_inc_fu/30, 
+                    event = a1$ischemic_heart_disease_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1)
+ggsurvplot(fit1, data = a1,fun = "event", size=.5, risk.table = T,pval = T,
+           conf.int = T,palette = c("#E7B800", "#2E9FDF"))
+
+# stroke/tia
+surv_object <- Surv(time = a1$stroke_tia_grp_inc_fu/30, 
+                    event = a1$stroke_tia_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1)
+ggsurvplot(fit1, data = a1,fun = "event", size=.5, risk.table = T,pval = T,
+           conf.int = T,palette = c("#E7B800", "#2E9FDF"))
+
+
+# cardiomyopathy/heart failure
+surv_object <- Surv(time = a1$cardiomyopathy_heart_failure_grp_inc_fu/30, 
+                    event = a1$cardiomyopathy_heart_failure_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1)
+ggsurvplot(fit1, data = a1,fun = "event", size=.5, risk.table = T,pval = T,
+           conf.int = T,palette = c("#E7B800", "#2E9FDF"))
+
+
+# 3 cvd combined
+surv_object <- Surv(time = a1$cvdcombo_grp_inc_fu/30, 
+                    event = a1$cvdcombo_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1)
+ggsurvplot(fit1, data = a1,fun = "event", size=.5, risk.table = T,pval = T,
+           conf.int = T,palette = c("#E7B800", "#2E9FDF"))
 
 
 
+
+
+
+
+################################################################################
+# Aim 1b - Survival analysis
+
+
+
+# Cases receiving chemo
+# K-M analysis
+
+# ischemic heart disease
+surv_object <- Surv(time = a1chemo$ischemic_heart_disease_grp_inc_fu/30, 
+                    event = a1chemo$ischemic_heart_disease_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1chemo)
+ggsurvplot(fit1, data = a1chemo,fun = "event", size=.5, risk.table = T,pval = T,
+           conf.int = T,palette = c("#E7B800", "#2E9FDF"))
+
+# stroke/tia
+surv_object <- Surv(time = a1chemo$stroke_tia_grp_inc_fu/30, 
+                    event = a1chemo$stroke_tia_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1chemo)
+ggsurvplot(fit1, data = a1chemo,fun = "event", size=.5, risk.table = T,pval = T,
+           conf.int = T,palette = c("#E7B800", "#2E9FDF"))
+
+# cardiomyopathy/heart failure
+surv_object <- Surv(time = a1chemo$cardiomyopathy_heart_failure_grp_inc_fu/30, 
+                    event = a1chemo$cardiomyopathy_heart_failure_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1chemo)
+ggsurvplot(fit1, data = a1chemo,fun = "event", size=.5, risk.table = T,pval = T,
+           conf.int = T,palette = c("#E7B800", "#2E9FDF"))
+
+# 3 cvd combined
+surv_object <- Surv(time = a1chemo$cvdcombo_grp_inc_fu/30, 
+                    event = a1chemo$cvdcombo_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1chemo)
+ggsurvplot(fit1, data = a1chemo,fun = "event", size=.5, risk.table = T,pval = T,
+           conf.int = T,palette = c("#E7B800", "#2E9FDF"))
+
+
+# Cases receiving hormonal therapy
+# K-M analysis
+
+# ischemic heart disease
+surv_object <- Surv(time = a1horm$ischemic_heart_disease_grp_inc_fu/30, 
+                    event = a1horm$ischemic_heart_disease_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1horm)
+ggsurvplot(fit1, data = a1horm,fun = "event", size=.5, risk.table = T,pval = T,
+           conf.int = T,palette = c("#E7B800", "#2E9FDF"))
+
+# stroke/tia
+surv_object <- Surv(time = a1horm$stroke_tia_grp_inc_fu/30, 
+                    event = a1horm$stroke_tia_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1horm)
+ggsurvplot(fit1, data = a1horm,fun = "event", size=.5, risk.table = T,pval = T,
+           conf.int = T,palette = c("#E7B800", "#2E9FDF"))
+
+# cardiomyopathy/heart failure
+surv_object <- Surv(time = a1horm$cardiomyopathy_heart_failure_grp_inc_fu/30, 
+                    event = a1horm$cardiomyopathy_heart_failure_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1horm)
+ggsurvplot(fit1, data = a1horm,fun = "event", size=.5, risk.table = T,pval = T,
+           conf.int = T,palette = c("#E7B800", "#2E9FDF"))
+
+# 3 cvd combined
+surv_object <- Surv(time = a1horm$cvdcombo_grp_inc_fu/30, 
+                    event = a1horm$cvdcombo_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1horm)
+ggsurvplot(fit1, data = a1horm,fun = "event", size=.5, risk.table = T,pval = T,
+           conf.int = T,palette = c("#E7B800", "#2E9FDF"))
+
+
+
+# Cases receiving radiation therapy
+# K-M analysis
+
+# ischemic heart disease
+surv_object <- Surv(time = a1rad$ischemic_heart_disease_grp_inc_fu/30, 
+                    event = a1rad$ischemic_heart_disease_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1rad)
+ggsurvplot(fit1, data = a1rad,fun = "event", size=.5, risk.table = T,pval = T,
+           conf.int = T,palette = c("#E7B800", "#2E9FDF"))
+
+# stroke/tia
+surv_object <- Surv(time = a1rad$stroke_tia_grp_inc_fu/30, 
+                    event = a1rad$stroke_tia_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1rad)
+ggsurvplot(fit1, data = a1rad,fun = "event", size=.5, risk.table = T,pval = T,
+           conf.int = T,palette = c("#E7B800", "#2E9FDF"))
+
+# cardiomyopathy/heart failure
+surv_object <- Surv(time = a1rad$cardiomyopathy_heart_failure_grp_inc_fu/30, 
+                    event = a1rad$cardiomyopathy_heart_failure_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1rad)
+ggsurvplot(fit1, data = a1rad,fun = "event", size=.5, risk.table = T,pval = T,
+           conf.int = T,palette = c("#E7B800", "#2E9FDF"))
+
+# 3 cvd combined
+surv_object <- Surv(time = a1rad$cvdcombo_grp_inc_fu/30, 
+                    event = a1rad$cvdcombo_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1rad)
+ggsurvplot(fit1, data = a1rad,fun = "event", size=.5, risk.table = T,pval = T,
+           conf.int = T,palette = c("#E7B800", "#2E9FDF"))
 
 
 
