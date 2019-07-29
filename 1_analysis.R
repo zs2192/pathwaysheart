@@ -229,7 +229,7 @@ dev.off()
 
 ################################################################################
 # Aim 1a - K-M analysis
-
+splots <- list()
 
 # for all cases v controls
 
@@ -238,7 +238,7 @@ surv_object <- Surv(time = floor(a1$ischemic_heart_disease_grp_inc_fu/30),
                     event = a1$ischemic_heart_disease_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1)
 png('isch_all.png',width =7,height = 5.5,units = 'in',res=250)
-ggsurvplot(fit1, data = a1,fun = "event", size=1, risk.table = T,pval = T,
+splots[[1]] <- ggsurvplot(fit1, data = a1,fun = "event", size=1, risk.table = T,pval = T,
            censor=F,conf.int = T,palette = 'jco',title='Ischemic heart disease')
 dev.off()
 
@@ -247,7 +247,7 @@ surv_object <- Surv(time = floor(a1$stroke_tia_grp_inc_fu/30),
                     event = a1$stroke_tia_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1)
 png('stroke_all.png',width =7,height = 5.5,units = 'in',res=250)
-ggsurvplot(fit1, data = a1,fun = "event", size=1, risk.table = T,pval = T,
+splots[[2]] <- ggsurvplot(fit1, data = a1,fun = "event", size=1, risk.table = T,pval = T,
            censor=F,conf.int = T,palette = 'jco',title='Stroke/TIA')
 dev.off()
 
@@ -256,7 +256,7 @@ surv_object <- Surv(time = floor(a1$cardiomyopathy_heart_failure_grp_inc_fu/30),
                     event = a1$cardiomyopathy_heart_failure_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1)
 png('chf_all.png',width =7,height = 5.5,units = 'in',res=250)
-ggsurvplot(fit1, data = a1,fun = "event", size=1, risk.table = T,pval = T,
+splots[[3]] <- ggsurvplot(fit1, data = a1,fun = "event", size=1, risk.table = T,pval = T,
            censor=F,conf.int = T,palette = 'jco',title='Cardiomiopathy/heart failure')
 dev.off()
 
@@ -265,13 +265,12 @@ surv_object <- Surv(time = floor(a1$cvdcombo_grp_inc_fu/30),
                     event = a1$cvdcombo_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1)
 png('combo_all.png',width =7,height = 5.5,units = 'in',res=250)
-ggsurvplot(fit1, data = a1,fun = "event", size=1, risk.table = T,pval = T,
+splots[[4]] <- ggsurvplot(fit1, data = a1,fun = "event", size=1, risk.table = T,pval = T,
            censor=F,conf.int = T,palette = 'jco',title='Any of the 3 outcomes')
 dev.off()
 
-
-
-
+fig1 <- arrange_ggsurvplots(splots,ncol = 2, nrow = 2, risk.table.height = 0.2)
+ggsave("fig1.png", fig1,width = 10, height = 12)
 
 
 
@@ -280,113 +279,133 @@ dev.off()
 
 ###
 # for chemo cases v controls
+splots <- list()
 
 # ischemic heart disease
 surv_object <- Surv(time = floor(a1chemo$ischemic_heart_disease_grp_inc_fu/30), 
                     event = a1chemo$ischemic_heart_disease_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1chemo)
 png('isch_chemo.png',width =7,height = 5.5,units = 'in',res=250)
-ggsurvplot(fit1, data = a1chemo,fun = "event", size=1, risk.table = T,pval = T,
-           censor=F,conf.int = T,palette = 'jco')
+splots[[1]] <- ggsurvplot(fit1, data = a1chemo,fun = "event", size=1, risk.table = T,pval = T,
+           censor=F,conf.int = T,palette = 'jco',title='Ischemic heart disease')
 dev.off()
 # stroke/tia
 surv_object <- Surv(time = floor(a1chemo$stroke_tia_grp_inc_fu/30), 
                     event = a1chemo$stroke_tia_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1chemo)
 png('stroke_chemo.png',width =7,height = 5.5,units = 'in',res=250)
-ggsurvplot(fit1, data = a1chemo,fun = "event", size=1, risk.table = T,pval = T,
-           censor=F,conf.int = T,palette = 'jco')
+splots[[2]] <- ggsurvplot(fit1, data = a1chemo,fun = "event", size=1, risk.table = T,pval = T,
+           censor=F,conf.int = T,palette = 'jco',title='Stroke/TIA')
 dev.off()
 # cardiomyopathy/heart failure
 surv_object <- Surv(time = floor(a1chemo$cardiomyopathy_heart_failure_grp_inc_fu/30), 
                     event = a1chemo$cardiomyopathy_heart_failure_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1chemo)
 png('chf_chemo.png',width =7,height = 5.5,units = 'in',res=250)
-ggsurvplot(fit1, data = a1chemo,fun = "event", size=1, risk.table = T,pval = T,
-           censor=F,conf.int = T,palette = 'jco')
+splots[[3]] <- ggsurvplot(fit1, data = a1chemo,fun = "event", size=1, risk.table = T,pval = T,
+           censor=F,conf.int = T,palette = 'jco',title='Cardiomiopathy/heart failure')
 dev.off()
 # 3 cvd combined
 surv_object <- Surv(time = floor(a1chemo$cvdcombo_grp_inc_fu/30), 
                     event = a1chemo$cvdcombo_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1chemo)
 png('combo_chemo.png',width =7,height = 5.5,units = 'in',res=250)
-ggsurvplot(fit1, data = a1chemo,fun = "event", size=1, risk.table = T,pval = T,
-           censor=F,conf.int = T,palette = 'jco')
+splots[[4]] <- ggsurvplot(fit1, data = a1chemo,fun = "event", size=1, risk.table = T,pval = T,
+           censor=F,conf.int = T,palette = 'jco',title='Any of the 3 outcomes')
 dev.off()
+
+
+fig2 <- arrange_ggsurvplots(splots, print = TRUE,
+                            ncol = 2, nrow = 2, risk.table.height = 0.2)
+ggsave("fig2.png", fig2,width = 10, height = 12)
 
 
 ###
 # for horm cases v controls
+splots <- list()
 
 # ischemic heart disease
 surv_object <- Surv(time = floor(a1horm$ischemic_heart_disease_grp_inc_fu/30), 
                     event = a1horm$ischemic_heart_disease_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1horm)
 png('isch_horm.png',width =7,height = 5.5,units = 'in',res=250)
-ggsurvplot(fit1, data = a1horm,fun = "event", size=1, risk.table = T,pval = T,
-           censor=F,conf.int = T,palette = 'jco')
+splots[[1]] <- ggsurvplot(fit1, data = a1horm,fun = "event", size=1, risk.table = T,pval = T,
+           censor=F,conf.int = T,palette = 'jco',title='Ischemic heart disease')
 dev.off()
 # stroke/tia
 surv_object <- Surv(time = floor(a1horm$stroke_tia_grp_inc_fu/30), 
                     event = a1horm$stroke_tia_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1horm)
 png('stroke_horm.png',width =7,height = 5.5,units = 'in',res=250)
-ggsurvplot(fit1, data = a1horm,fun = "event", size=1, risk.table = T,pval = T,
-           censor=F,conf.int = T,palette = 'jco')
+splots[[2]] <- ggsurvplot(fit1, data = a1horm,fun = "event", size=1, risk.table = T,pval = T,
+           censor=F,conf.int = T,palette = 'jco',title='Stroke/TIA')
 dev.off()
 # cardiomyopathy/heart failure
 surv_object <- Surv(time = floor(a1horm$cardiomyopathy_heart_failure_grp_inc_fu/30), 
                     event = a1horm$cardiomyopathy_heart_failure_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1horm)
 png('chf_horm.png',width =7,height = 5.5,units = 'in',res=250)
-ggsurvplot(fit1, data = a1horm,fun = "event", size=1, risk.table = T,pval = T,
-           censor=F,conf.int = T,palette = 'jco')
+splots[[3]] <- ggsurvplot(fit1, data = a1horm,fun = "event", size=1, risk.table = T,pval = T,
+           censor=F,conf.int = T,palette = 'jco',title='Cardiomiopathy/heart failure')
 dev.off()
 # 3 cvd combined
 surv_object <- Surv(time = floor(a1horm$cvdcombo_grp_inc_fu/30), 
                     event = a1horm$cvdcombo_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1horm)
 png('combo_horm.png',width =7,height = 5.5,units = 'in',res=250)
-ggsurvplot(fit1, data = a1horm,fun = "event", size=1, risk.table = T,pval = T,
-           censor=F,conf.int = T,palette = 'jco')
+splots[[4]] <- ggsurvplot(fit1, data = a1horm,fun = "event", size=1, risk.table = T,pval = T,
+           censor=F,conf.int = T,palette = 'jco',title='Any of the 3 outcomes')
 dev.off()
+
+
+fig3 <- arrange_ggsurvplots(splots, print = TRUE,
+                            ncol = 2, nrow = 2, risk.table.height = 0.2)
+ggsave("fig3.png", fig3,width = 10, height = 12)
+
 
 
 ###
 # for radiation cases v controls
+splots <- list()
 
 # ischemic heart disease
 surv_object <- Surv(time = floor(a1rad$ischemic_heart_disease_grp_inc_fu/30), 
                     event = a1rad$ischemic_heart_disease_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1rad)
 png('isch_rad.png',width =7,height = 5.5,units = 'in',res=250)
-ggsurvplot(fit1, data = a1rad,fun = "event", size=1, risk.table = T,pval = T,
-           censor=F,conf.int = T,palette = 'jco')
+splots[[1]] <- ggsurvplot(fit1, data = a1rad,fun = "event", size=1, risk.table = T,pval = T,
+           censor=F,conf.int = T,palette = 'jco',title='Ischemic heart disease')
 dev.off()
 # stroke/tia
 surv_object <- Surv(time = floor(a1rad$stroke_tia_grp_inc_fu/30), 
                     event = a1rad$stroke_tia_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1rad)
 png('stroke_rad.png',width =7,height = 5.5,units = 'in',res=250)
-ggsurvplot(fit1, data = a1rad,fun = "event", size=1, risk.table = T,pval = T,
-           censor=F,conf.int = T,palette = 'jco')
+splots[[2]] <- ggsurvplot(fit1, data = a1rad,fun = "event", size=1, risk.table = T,pval = T,
+           censor=F,conf.int = T,palette = 'jco',title='Stroke/TIA')
 dev.off()
 # cardiomyopathy/heart failure
 surv_object <- Surv(time = floor(a1rad$cardiomyopathy_heart_failure_grp_inc_fu/30), 
                     event = a1rad$cardiomyopathy_heart_failure_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1rad)
 png('chf_rad.png',width =7,height = 5.5,units = 'in',res=250)
-ggsurvplot(fit1, data = a1rad,fun = "event", size=1, risk.table = T,pval = T,
-           censor=F,conf.int = T,palette = 'jco')
+splots[[3]] <- ggsurvplot(fit1, data = a1rad,fun = "event", size=1, risk.table = T,pval = T,
+           censor=F,conf.int = T,palette = 'jco',title='Cardiomiopathy/heart failure')
 dev.off()
 # 3 cvd combined
 surv_object <- Surv(time = floor(a1rad$cvdcombo_grp_inc_fu/30), 
                     event = a1rad$cvdcombo_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1rad)
 png('combo_rad.png',width =7,height = 5.5,units = 'in',res=250)
-ggsurvplot(fit1, data = a1rad,fun = "event", size=1, risk.table = T,pval = T,
-           censor=F,conf.int = T,palette = 'jco')
+splots[[4]] <- ggsurvplot(fit1, data = a1rad,fun = "event", size=1, risk.table = T,pval = T,
+           censor=F,conf.int = T,palette = 'jco',title='Any of the 3 outcomes')
 dev.off()
+
+
+fig4 <- arrange_ggsurvplots(splots, print = TRUE,
+                            ncol = 2, nrow = 2, risk.table.height = 0.2)
+ggsave("fig4.png", fig4,width = 10, height = 12)
+
 
 
 
@@ -395,19 +414,23 @@ dev.off()
 # Aim 1a - Cox model
 
 coxtab <- function(d,x){
+  
   surv_object <- Surv(time = floor(d[,paste0(x,'_fu')]/30), event = d[,x])
-  fit.coxph <- coxph(surv_object ~ group1+cops2+bmicat1+menop+parity+
-                       diab+dyslipidemia2+systolic_2+diastolic_2+
-                       glu_f_q+hdl_q+hgba1c_q+ldl_clc_ns_q+tot_choles_q+trigl_ns_q+
-                       medhousincome_q+houspoverty_q+edu1_q+edu2_q+edu3_q+edu4_q+
-                       #medhousincome+houspoverty+edu1+edu2+edu3+edu4+
+  fit.coxph1 <- coxph(surv_object ~ group1, data = d)
+  fit.coxph2 <- coxph(surv_object ~ group1+bmicat1+menop+parity+
+                       diab+systolic_2+diastolic_2+
+                       glu_f_q+
+                       medhousincome_q+edu1_q+
+                       #medhousincome+houspoverty+edu1+edu2+edu3+edu4++dyslipidemia2+hdl_q+hgba1c_q+ldl_clc_ns_q+tot_choles_q+trigl_ns_q+
                        arrhythmia_grp_prev+cardiac_arrest_grp_prev+
                         cardiomyopathy_heart_failure_grp_prev+
                         ischemic_heart_disease_grp_prev+
                         myocarditis_pericarditis_grp_prev+stroke_tia_grp_prev+
                         valvular_disease_grp_prev+venous_thromboembolic_disease_grp_prev, data = d)
-  sum <- cbind(summary(fit.coxph)$coef[,c(2,5)],summary(fit.coxph)$conf.int[,3:4])
-  sum[,c(1,3,4,2)]
+  sum1 <- c(summary(fit.coxph1)$coef[c(2,5)],summary(fit.coxph1)$conf.int[3:4])
+  sum2 <- cbind(summary(fit.coxph2)$coef[,c(2,5)],summary(fit.coxph2)$conf.int[,3:4])
+  
+  rbind(sum1, sum2)[,c(1,3,4,2)]
 }
 
 
@@ -416,15 +439,18 @@ cox_isch <- coxtab(a1,'ischemic_heart_disease_grp_inc')
 cox_stroke <- coxtab(a1,'stroke_tia_grp_inc')
 cox_chf <- coxtab(a1,'cardiomyopathy_heart_failure_grp_inc')
 cox_cvdcombo <- coxtab(a1,'cvdcombo_grp_inc')
-
+cox1 <- cbind(cox_isch,'', cox_stroke,'', cox_chf,'', cox_cvdcombo)
+cox1 <- rbind(cox1[1,],'',cox1[2,],'',cox1[3:7,],cox1[8,],'',cox1[9:11,],cox1[12,],'',
+              cox1[13:14,],'',cox1[15:16,],'',cox1[17:20,],'',cox1[21:24,],'',
+              cox1[25:27,],'',cox1[28:35,])
+              
 
 # export tables
 write_csv(data.frame(cbind(row.names(cox_isch),cox_isch)),'cox_isch.csv')
 write_csv(data.frame(cbind(row.names(cox_isch),cox_stroke)),'cox_stroke.csv')
 write_csv(data.frame(cbind(row.names(cox_isch),cox_chf)),'cox_chf.csv')
 write_csv(data.frame(cbind(row.names(cox_isch),cox_cvdcombo)),'cox_cvdcombo.csv')
-
-
+write_csv(data.frame(cbind(row.names(cox1),cox1)),'cox1.csv')
 
 
 
@@ -436,19 +462,51 @@ cox_isch_chemo <- data.frame(coxtab(a1chemo,'ischemic_heart_disease_grp_inc'))
 cox_stroke_chemo <- data.frame(coxtab(a1chemo,'stroke_tia_grp_inc'))
 cox_chf_chemo <- data.frame(coxtab(a1chemo,'cardiomyopathy_heart_failure_grp_inc'))
 cox_cvdcombo_chemo <- data.frame(coxtab(a1chemo,'cvdcombo_grp_inc'))
+cox2 <- cbind(cox_isch_chemo,'', cox_stroke_chemo,'', cox_chf_chemo,'', cox_cvdcombo_chemo)
+cox2 <- rbind(cox2[1,],'',cox2[2,],'',cox2[3:7,],cox2[8,],'',cox2[9:11,],cox2[12,],'',
+              cox2[13:14,],'',cox2[15:16,],'',cox2[17:20,],'',cox2[21:24,],'',
+              cox2[25:27,],'',cox2[28:35,])
+
 
 # horm
 cox_isch_horm <- data.frame(coxtab(a1horm,'ischemic_heart_disease_grp_inc'))
 cox_stroke_horm <- data.frame(coxtab(a1horm,'stroke_tia_grp_inc'))
 cox_chf_horm <- data.frame(coxtab(a1horm,'cardiomyopathy_heart_failure_grp_inc'))
 cox_cvdcombo_horm <- data.frame(coxtab(a1horm,'cvdcombo_grp_inc'))
+cox3 <- cbind(cox_isch_horm,'', cox_stroke_horm,'', cox_chf_horm,'', cox_cvdcombo_horm)
+cox3 <- rbind(cox3[1,],'',cox3[2,],'',cox3[3:7,],cox3[8,],'',cox3[9:11,],cox3[12,],'',
+              cox3[13:14,],'',cox3[15:16,],'',cox3[17:20,],'',cox3[21:24,],'',
+              cox3[25:27,],'',cox3[28:35,])
 
 # rad
 cox_isch_rad <- data.frame(coxtab(a1rad,'ischemic_heart_disease_grp_inc'))
 cox_stroke_rad <- data.frame(coxtab(a1rad,'stroke_tia_grp_inc'))
 cox_chf_rad <- data.frame(coxtab(a1rad,'cardiomyopathy_heart_failure_grp_inc'))
 cox_cvdcombo_rad <- data.frame(coxtab(a1rad,'cvdcombo_grp_inc'))
+cox4 <- cbind(cox_isch_rad,'', cox_stroke_rad,'', cox_chf_rad,'', cox_cvdcombo_rad)
+cox4 <- rbind(cox4[1,],'',cox4[2,],'',cox4[3:7,],cox4[8,],'',cox4[9:11,],cox4[12,],'',
+              cox4[13:14,],'',cox4[15:16,],'',cox4[17:20,],'',cox4[21:24,],'',
+              cox4[25:27,],'',cox4[28:35,])
 
+# rad - left breast
+cox_isch_radl <- data.frame(coxtab(a1rad_l,'ischemic_heart_disease_grp_inc'))
+cox_stroke_radl <- data.frame(coxtab(a1rad_l,'stroke_tia_grp_inc'))
+cox_chf_radl <- data.frame(coxtab(a1rad_l,'cardiomyopathy_heart_failure_grp_inc'))
+cox_cvdcombo_radl <- data.frame(coxtab(a1rad_l,'cvdcombo_grp_inc'))
+cox5 <- cbind(cox_isch_radl,'', cox_stroke_radl,'', cox_chf_radl,'', cox_cvdcombo_radl)
+cox5 <- rbind(cox5[1,],'',cox5[2,],'',cox5[3:7,],cox5[8,],'',cox5[9:11,],cox5[12,],'',
+              cox5[13:14,],'',cox5[15:16,],'',cox5[17:20,],'',cox5[21:24,],'',
+              cox5[25:27,],'',cox5[28:35,])
+
+# rad - right breast
+cox_isch_radr <- data.frame(coxtab(a1rad_r,'ischemic_heart_disease_grp_inc'))
+cox_stroke_radr <- data.frame(coxtab(a1rad_r,'stroke_tia_grp_inc'))
+cox_chf_radr <- data.frame(coxtab(a1rad_r,'cardiomyopathy_heart_failure_grp_inc'))
+cox_cvdcombo_radr <- data.frame(coxtab(a1rad_r,'cvdcombo_grp_inc'))
+cox6 <- cbind(cox_isch_radr,'', cox_stroke_radr,'', cox_chf_radr,'', cox_cvdcombo_radr)
+cox6 <- rbind(cox6[1,],'',cox6[2,],'',cox6[3:7,],cox6[8,],'',cox6[9:11,],cox6[12,],'',
+              cox6[13:14,],'',cox6[15:16,],'',cox6[17:20,],'',cox6[21:24,],'',
+              cox6[25:27,],'',cox6[28:35,])
 
 # export tables
 write_csv(cbind(row.names(cox_isch),cox_isch_chemo),'cox_isch_chemo.csv')
@@ -464,7 +522,11 @@ write_csv(cox_stroke_rad,'cox_stroke_rad.csv')
 write_csv(cox_chf_rad,'cox_chf_rad.csv')
 write_csv(cox_cvdcombo_rad,'cox_cvdcombo_rad.csv')
 
-
+write_csv(data.frame(cbind(row.names(cox2),cox2)),'cox2.csv')
+write_csv(data.frame(cbind(row.names(cox3),cox3)),'cox3.csv')
+write_csv(data.frame(cbind(row.names(cox4),cox4)),'cox4.csv')
+write_csv(data.frame(cbind(row.names(cox5),cox5)),'cox5.csv')
+write_csv(data.frame(cbind(row.names(cox6),cox6)),'cox6.csv')
 
 
 

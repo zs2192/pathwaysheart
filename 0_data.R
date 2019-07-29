@@ -74,6 +74,9 @@ dev.off()
 names(cases_new) <- tolower(names(cases_new))
 names(cases_tumor) <- tolower(names(cases_tumor))
 names(controls1) <- tolower(names(controls1))
+names(controls2) <- tolower(names(controls2))
+
+
 
 # combine case and tumor characteristics data
 cases <- merge(cases_new[,c("cvd_studyid","gender","raceethn1","birth_year",
@@ -100,6 +103,21 @@ controls1 <- controls1[,names(cases)]
 
 # combine cases and control data, n=89644
 all <- rbind(cases, controls1)
+
+
+# stack cases and controls 2, matched on age and race/ethnicity
+# reorder controls1 variable to be the same as cases
+controls2$group <- 'Control'
+controls2$dxage <- controls2$index_age
+controls2[,names(cases)[!(names(cases) %in% names(controls2))]] <- NA
+
+cases[,names(controls2)[!(names(controls2) %in% names(cases))]] <- NA
+cases$group <- 'Case'
+controls2 <- controls2[,names(cases)]
+
+# combine cases and control data, n=89644
+all2 <- rbind(cases, controls2)
+
 
 
 
@@ -540,11 +558,15 @@ a1$dyslipidemia2 <- factor(a1$dyslipidemia, levels=c('No/Unknown','Yes'))
 id_chemo <- cases$cvd_studyid[which(cases$chemo_yn==1)]
 id_horm <- cases$cvd_studyid[which(cases$horm_yn==1)]
 id_rad <- cases$cvd_studyid[which(cases$rad_yn==1)]
+id_rad_l <- cases$cvd_studyid[which(cases$rad_yn==1 & cases$laterality==2)]
+id_rad_r <- cases$cvd_studyid[which(cases$rad_yn==1 & cases$laterality==1)]
 
 # select subsample based on these ids
 a1chemo <- a1[which(a1$cvd_studyid %in% id_chemo | a1$case_id %in% id_chemo),]
 a1horm <- a1[which(a1$cvd_studyid %in% id_horm | a1$case_id %in% id_horm),]
 a1rad <- a1[which(a1$cvd_studyid %in% id_rad | a1$case_id %in% id_rad),]
+a1rad_l <- a1[which(a1$cvd_studyid %in% id_rad_l | a1$case_id %in% id_rad_l),]
+a1rad_r <- a1[which(a1$cvd_studyid %in% id_rad_r | a1$case_id %in% id_rad_r),]
 
 
 

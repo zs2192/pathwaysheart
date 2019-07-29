@@ -67,7 +67,12 @@ t1_new <-  lapply(1:nrow(t1), function(x){
   })
 })
 
-t1_new <- do.call(rbind,lapply(t1_new, function(x) do.call(rbind,x)))
+t1_new <- data.frame(do.call(rbind,lapply(t1_new, function(x) do.call(rbind,x))))
+
+names(t1_new) <- c('report','treatment','cummlative_dose','total_dose',
+                   'fraction_num','fraction_dose','location','technique',
+                   'start_date','end_date')
+
 
 
 write.csv(t1_new, 'Q:/HGREENLEE/Data Working/Pathways Heart Study/Radiation data/t1_extract_20190728.csv')
@@ -132,8 +137,8 @@ t2_new <- lapply(1:nrow(t2),function(x){
       NA
     }
     else {
-      if(nchar(dt[1])==8){as.Date(dt,'%m/%d/%y')} else {
-        dt = as.Date(dt,'%m/%d/%Y')
+      if(nchar(dt[1])==8){ as.Date(dt,'%m/%d/%y')} else {
+        as.Date(dt,'%m/%d/%Y')
       }
     }
     c(txt, y, c,s,e,tec,frac,dt)
@@ -143,8 +148,17 @@ t2_new <- lapply(1:nrow(t2),function(x){
 })
 
 
-t2_new <- do.call(rbind,lapply(t2_new, function(x) do.call(rbind,x)))
+t2_new <- data.frame(do.call(rbind,lapply(t2_new, function(x) do.call(rbind,x))))
+names(t2_new) <- c('report','treatment','course','locatin','energy','technique',
+                   'fraction_dose','fraction_num','fraction_planned',
+                   'start_date','end_date')
+t2_new$fraction_dose <- as.numeric(as.character(t2_new$fraction_dose)) 
+t2_new$fraction_num <- as.numeric(as.character(t2_new$fraction_num))
+t2_new$total_dose <- t2_new$fraction_dose*t2_new$fraction_num
 
+t2_new <- t2_new[,c('report','treatment','course','locatin','energy','technique',
+                    'fraction_dose','fraction_num','fraction_planned',
+                    'total_dose','start_date','end_date')]
 
 write.csv(t2_new, 'Q:/HGREENLEE/Data Working/Pathways Heart Study/Radiation data/t2_extract_20190728.csv')
 
