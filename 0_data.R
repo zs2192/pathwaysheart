@@ -421,6 +421,8 @@ a1[,c("inpatient_flg","outpatient_flg","pharmacy_flg","a1c_flg",
                                                     x <- factor(x, levels=c(1,0,2),labels = c('Yes','No','Unknown'))
                                                     x
                                                   })
+a1$diab <- factor(ifelse(a1$inpatient_flg=='Yes'|a1$outpatient_flg=='Yes'|a1$pharmacy_flg=='Yes'|a1$a1c_flg=='Yes'|a1$fgrg_flg=='Yes'|a1$a1cfgrg_flg=='Yes',
+                  'Yes','No'))
 
 # dyslipidemia
 a1$dyslipidemia[is.na(a1$dyslipidemia)] <- 0
@@ -493,8 +495,43 @@ a1$cvdcombo_grp_inc_fu[which(a1$cvdcombo_grp_inc==0)] <-
 
 
 
+################################################################################
+# Data process for modeling
 
+# relevel the group var, with control as referent
+a1$group1 <- factor(a1$group, levels = c('Control','Case'))
 
+# relevel bmi var
+a1$bmicat1 <- factor(a1$bmicat, levels = c('Normal','Underweight','Overweight','Obese I','Obese II+','Unknown'))
+
+library(lsr)
+# cut continuous var into quantiles
+a1$glu_q <- quantileCut(a1$glu_f,4)
+a1[,paste0(varlist[22:36],'_q')] <- lapply(a1[,varlist[22:36]], function(x) {
+  x <- factor(quantileCut(x,4),labels = c('Q1','Q2','Q3','Q4'))
+  x <- as.character(x)
+  x[is.na(x)] <- 'Missing'
+  if(length(table(x))==4){
+    x <- factor(x, levels = c('Q1','Q2','Q3','Q4'))
+  } else {
+    x <- factor(x, levels = c('Q1','Q2','Q3','Q4','Missing'))
+  }
+  x
+})
+
+# cut blood pressure
+a1$systolic_2 <- cut(a1$systolic,c(0,140,Inf),right=F,labels = c('Normal','Abnormal'))
+a1$systolic_2 <- as.character(a1$systolic_2)
+a1$systolic_2[is.na(a1$systolic_2)] <- 'Missing'
+a1$systolic_2 <- factor(a1$systolic_2,levels = c('Normal','Abnormal','Missing'))
+
+a1$diastolic_2 <- cut(a1$diastolic,c(0,90,Inf),right=F,labels = c('Normal','Abnormal'))
+a1$diastolic_2 <- as.character(a1$diastolic_2)
+a1$diastolic_2[is.na(a1$diastolic_2)] <- 'Missing'
+a1$diastolic_2 <- factor(a1$diastolic_2,levels = c('Normal','Abnormal','Missing'))
+
+# relevel dyslipidemia
+a1$dyslipidemia2 <- factor(a1$dyslipidemia, levels=c('No/Unknown','Yes'))
 
 ################################################################################
 # Create datasets with cases who received treatment and their matched controls
