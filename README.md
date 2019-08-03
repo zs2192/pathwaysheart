@@ -1,9 +1,6 @@
 # Pathways Heart Study analytical file repository
 
-Project setup:
-
-
-Current analytical datasets:
+### Current analytical datasets:
 
 Cases data received on 2019-06-27: 
   cases_final_27mar19.sas7bdat; 
@@ -37,7 +34,7 @@ lab data received on 6/27/2019:
 
 
 
-There are 2 R codes:
+## There are 2 R codes:
 
   0_data.R is for data importing, cleaning, and variable definition. Please replace the data file path with your own local path.
   1_analysis.R is for data analysis of Aim 1. This code will generate the tables for manuscript.
