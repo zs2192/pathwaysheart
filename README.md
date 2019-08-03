@@ -5,34 +5,34 @@ Project setup:
 
 Current analytical datasets:
 
-Cases data received on 2019-06-27
-  cases_final_27mar19.sas7bdat
+Cases data received on 2019-06-27: 
+  cases_final_27mar19.sas7bdat; 
   cases_tumor_char_26jun19.sas7bdat
 
-Controls data received on 2019-07-03
-  controls_group1.sas7bdat
+Controls data received on 2019-07-03: 
+  controls_group1.sas7bdat; 
   controls_group2.sas7bdat
 
-Risk factor data received on 4/17/2019
-  bmi.sas7bdat
-  bp.sas7bdat
-  dyslipidemia.sas7bdat
-  diabetes.sas7bdat
-  smoking.sas7bdat
+Risk factor data received on 4/17/2019: 
+  bmi.sas7bdat; 
+  bp.sas7bdat; 
+  dyslipidemia.sas7bdat; 
+  diabetes.sas7bdat; 
+  smoking.sas7bdat; 
   smoking_6months.sas7bdat
 
-Menopause, parity, census data received on 4/17/2019
-  menopause.sas7bdat
-  parity.sas7bdat
+Menopause, parity, census data received on 4/17/2019: 
+  menopause.sas7bdat; 
+  parity.sas7bdat; 
   census.sas7bdat
 
-CVD outcome data recevied on 6/27/2019
+CVD outcome data recevied on 6/27/2019: 
   cvd_events.sas7bdat
 
-censoring events received on 6/27/2019
+censoring events received on 6/27/2019: 
   censoring_27jun19.sas7bdat
 
-lab data received on 6/27/2019 
+lab data received on 6/27/2019: 
   labs.sas7bdat
 
 
