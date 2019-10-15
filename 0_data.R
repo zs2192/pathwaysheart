@@ -1,5 +1,6 @@
 # Pathways Heart Study - Aim 1 data cleaning
-# Zaixing Shi, 7/20/2019
+# Zaixing Shi, 10/15/2019
+
 
 library(tidyverse)
 library(haven)
@@ -127,31 +128,28 @@ all2 <- rbind(cases, controls2)
 # Select labs data
 # Date range: closest measure within 36 mos prior to index date and before surgery
 
-# impute missing surgery dates
-cases$dx2surgdays <- as.numeric(cases$surg_date - cases$index_date) 
-cases$surg_date[which(is.na(cases$surg_date) & cases$surg_sum>0)] <- 
-  cases$index_date[which(is.na(cases$surg_date) & cases$surg_sum>0)] + 
-  median(cases$dx2surgdays,na.rm=T)
-
 
 # BMI
 names(bmi) <- tolower(names(bmi))
+## merge the ref_date to the BMI dataset
 bmi <- merge(bmi, all[,c("cvd_studyid","dxdate",'rf_date')], by='cvd_studyid')
+## select the bmi measures within 3 years prior to index date and before the ref_date
 bmi1 <- bmi[which(bmi$measure_date >= bmi$index_date-365*3 & bmi$measure_date <= bmi$rf_date),]
+## calculate the date absolute difference between index date and each measurement date
 bmi1$datediff <- abs(as.numeric(bmi1$measure_date - bmi1$index_date))
+## for each patient, select the measurement with the minimum absolute date difference
 bmi1 <- ddply(bmi1, .(cvd_studyid), function(d){
   d <- d[which(d$datediff==min(d$datediff)),]
   d
 },.parallel=TRUE)
-
-## clean up BMI
+## clean up BMI to remove non-numeric characters from data
 bmi1$bmi_num <- gsub('<|>|>=','',bmi1$bmi)
 bmi1$bmi_num <- as.numeric(gsub('-.*','',bmi1$bmi_num))
-
 ## aggregate multiple values within same day
 bmi2 <- aggregate(x = bmi1$bmi_num, 
                   by = list(bmi1$cvd_studyid,bmi1$datediff), 
                   mean, na.rm=T)
+## rename the final dataset
 names(bmi2) <- c('cvd_studyid','bmi_datediff','bmi')
 
 
@@ -196,6 +194,9 @@ system.time(labs1 <- ddply(labs1, .(cvd_studyid,test_type), function(d){
   d <- d[which(d$datediff==min(d$datediff)),]
   d
 },.parallel=TRUE))
+
+## Turn lab data from long to wide format, so that each patient has 1 row, and 
+## each type of test is in a separate column
 
 labs2 <- dcast(data=labs1,cvd_studyid+index_date+control_group~test_type,
                 value.var = 'result', mean, na.rm=T)
