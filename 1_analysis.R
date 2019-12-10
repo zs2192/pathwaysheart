@@ -1,5 +1,5 @@
 # CVD and BC exploratory data analysis
-# Zaixing Shi, 11/22/2019
+# Zaixing Shi, 12/10/2019
 
 
 library(tidyverse)
@@ -40,12 +40,11 @@ tab1 <- function(d,x){
   sum
 }
 # variables to analyze
-varlist <- c('dxage','enr_len','cops2','bmi','agegrp','raceethn1','index_yr',
-             'bmicat','smok1','menop','gravid','parity','diab','dyslipidemia',
+varlist <- c('enr_len','cops2','bmi1','agegrp','raceethn1',
+             'bmicat','smok','menop','diab','dyslipidemia',
              "systolic" ,"diastolic","glu_f","hdl","hgba1c",
              "ldl_clc_ns","tot_choles","trigl_ns",
-             'hhincome1','hhincome2',"hhincome3",'medhousincome',
-             'houspoverty', "edu1","edu2","edu3","edu4")
+             'medhousincome','houspoverty', "edu1","edu2","edu3","edu4")
 
 # all sample
 table1_all <- do.call(rbind,lapply(varlist,function(x) tab1(a1,x)))
@@ -80,7 +79,7 @@ write_csv(table1_rad,'table1_rad.csv')
 
 # get cvd prevalence variables
 cvdvars <- grep('_prev$',names(a1),value = T)
-cvdvars <- cvdvars[c(1:9,c(14,15,16,19,17,11:13,18,22,24,25,26,21,10,20,23,27:32))]
+cvdvars <- cvdvars[c(1,2,16,19,4:9,c(14,15,16,19,17,11:13,18,22,24,25,26,21,10,20,23,27:32))]
 # function to create
 tab2 <- function(d,x){
   d[,x] <- factor(d[,x],levels=c(0,1),labels = c('No','Yes'))
@@ -102,15 +101,15 @@ table2_prev_cvd <- do.call(rbind,lapply(cvdvars ,function(x) tab2(a1,x)))
 table2_prev_cvd <- data.frame(cbind(row.names(table2_prev_cvd), table2_prev_cvd))
 
 ## compare incidence between cases receiving chemo and controls
-table2_prev_cvd_chemo <- do.call(rbind,lapply(cvdvars,function(x) tab2(a1chemo,x)))
+table2_prev_cvd_chemo <- do.call(rbind,lapply(cvdvars,function(x) tab2(a1[a1_chemo,],x)))
 table2_prev_cvd_chemo <- data.frame(cbind(row.names(table2_prev_cvd_chemo), table2_prev_cvd_chemo))
 
 ## compare incidence between cases receiving horm and controls
-table2_prev_cvd_horm <- do.call(rbind,lapply(cvdvars,function(x) tab2(a1horm,x)))
+table2_prev_cvd_horm <- do.call(rbind,lapply(cvdvars,function(x) tab2(a1[a1_horm,],x)))
 table2_prev_cvd_horm <- data.frame(cbind(row.names(table2_prev_cvd_horm), table2_prev_cvd_horm))
 
 ## compare incidence between cases receiving rad and controls
-table2_prev_cvd_rad <- do.call(rbind,lapply(cvdvars,function(x) tab2(a1rad,x)))
+table2_prev_cvd_rad <- do.call(rbind,lapply(cvdvars,function(x) tab2(a1[a1_rad,],x)))
 table2_prev_cvd_rad <- data.frame(cbind(row.names(table2_prev_cvd_rad), table2_prev_cvd_rad))
 
 # export table
@@ -132,7 +131,7 @@ write_csv(table2_prev_cvd_rad[table2_prev_cvd_rad$V1=='Yes',], 'table2_prev_cvd_
 
 ## True incidence
 cvdvars <- grep('_inc$',names(a1),value = T)
-cvdvars <- cvdvars[c(1:9,c(14,15,16,19,17,11:13,18,22,24,25,26,21,10,20,23,27:32))]
+cvdvars <- cvdvars[c(1,2,16,19,4:9,c(14,15,16,19,17,11:13,18,22,24,25,26,21,10,20,23,27:32))]
 
 
 ## compare incidence between all cases and controls
@@ -161,7 +160,7 @@ write_csv(table2_cvd_rad[table2_cvd_rad$V1=='Yes',], 'table2_cvd_rad.csv')
 
 ## Any new onset = true incidence + recurrence
 cvdvars <- grep('_rec$',names(a1),value = T)
-cvdvars <- cvdvars[c(1:9,c(14,15,16,19,17,11:13,18,22,24,25,26,21,10,20,23,27:32))]
+cvdvars <- cvdvars[c(1,2,16,19,4:9,c(14,15,16,19,17,11:13,18,22,24,25,26,21,10,20,23,27:32))]
 
 ## compare incidence between all cases and controls
 table2_rec_cvd <- do.call(rbind,lapply(cvdvars ,function(x) tab2(a1,x)))
