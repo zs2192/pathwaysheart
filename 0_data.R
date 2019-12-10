@@ -21,14 +21,15 @@ registerDoParallel(cl)
 # Load data
 
 # import cases data received on 2019-06-27
-pathpref = 'Q:/HGREENLEE/Data Working/Pathways Heart Study/Aim 1 cases/2019-06-27/'
-cases_new <- as.data.frame(read_sas(paste0(pathpref,'cases_final_27mar19.sas7bdat')))
-cases_tumor <- as.data.frame(read_sas(paste0(pathpref,'cases_tumor_char_26jun19.sas7bdat')))
+pathpref = 'C:/Users/Zaixing/OneDrive - Fred Hutchinson Cancer Research Center/Pathways Heart Study/CVD_BC/data/OneDrive_2019-11-13/PathwaysHeart Study Data Request #0007 - De-Ident20191112105146/'
+#cases_new <- as.data.frame(read_sas(paste0(pathpref,'cases_final_27mar19.sas7bdat')))
+#cases_tumor <- as.data.frame(read_sas(paste0(pathpref,'cases_tumor_char_26jun19.sas7bdat')))
+cases <- as.data.frame(read_sas(paste0(pathpref,'cases.sas7bdat')))
 
 # import controls data received on 2019-07-03
-pathpref = 'Q:/HGREENLEE/Data Working/Pathways Heart Study/Aim 1 cases/2019-07-03/'
-controls1 <- as.data.frame(read_sas(paste0(pathpref,'controls_group1.sas7bdat')))
-controls2 <- as.data.frame(read_sas(paste0(pathpref,'controls_group2.sas7bdat')))
+#controls1 <- as.data.frame(read_sas(paste0(pathpref,'controls_group1.sas7bdat')))
+#controls2 <- as.data.frame(read_sas(paste0(pathpref,'controls_group2.sas7bdat')))
+controls <- as.data.frame(read_sas(paste0(pathpref,'controls.sas7bdat')))
 
 ## risk factor data received on 4/17/2019
 pathpref = 'Q:/HGREENLEE/Data Working/Pathways Heart Study/Aim 1 cases/2019-04-17/'
