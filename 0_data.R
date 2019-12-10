@@ -1,5 +1,5 @@
 # Pathways Heart Study - Aim 1 data cleaning
-# Zaixing Shi, 11/22/2019
+# Zaixing Shi, 12/10/2019
 
 
 library(tidyverse)
