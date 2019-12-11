@@ -1,5 +1,5 @@
 # Pathways Heart Study - Aim 1 data cleaning
-# Zaixing Shi, 12/10/2019
+# Zaixing Shi, 12/11/2019
 
 
 library(tidyverse)
@@ -38,6 +38,7 @@ bp <- as.data.frame(read_sas(paste0(pathpref,'baseline_bp.sas7bdat')))
 lipid <- as.data.frame(read_sas(paste0(pathpref,'dyslipidemia.sas7bdat')))
 diab <- as.data.frame(read_sas(paste0(pathpref,'diabetes.sas7bdat')))
 smok <- as.data.frame(read_sas(paste0(pathpref,'smoking.sas7bdat')))
+hyper <- as.data.frame(read_sas(paste0(pathpref,'phase_hypertension.sas7bdat')))
 #smok6 <- as.data.frame(read_sas(paste0(pathpref,'smoking_6months.sas7bdat')))
 
 ## menopause, parity, census data received on 2019-11-12
@@ -368,7 +369,7 @@ datalist <- list(all,
                  bmi[,c("num7_studyid","bmi","bmi_category_ii","daysto_bmi")],
                  bp[,c("num7_studyid","systolic","diastolic","daysto_bp","hypertension")],
                  labs_w[,c("num7_studyid","GLU_F","GTT75_PRE","HDL","HGBA1C","LDL_CLC_NS","TOT_CHOLES","TRIGL_NS")],
-                 diab[,c(2:4)],lipid[,1:3], 
+                 diab[,c(2:4)],lipid[,1:3], hyper[,c(2,3,5)],
                  smok[,c(2:3)],menop,
                  census[,c(1:14)],
                  cvd2_final,
@@ -448,8 +449,8 @@ write_csv(a2,'a2.csv')
 #### for CASES AND CONTROL1
 # recode categorical variables
 # age groups
-a1$agegrp <- cut(a1$dxage, c(0, 40, 50, 60, 70, 80, 101), right=F,
-                  labels = c('<40 yo','40-49','50-59','60-69','70-79','80+ yo'))
+a1$agegrp <- cut(a1$dxage, c(0, 40, 50, 60, 70, 101), right=F,
+                  labels = c('<40 yo','40-49','50-59','60-69','70+ yo'))
 
 # race
 a1$raceethn1 <- factor(a1$raceethn1, 
@@ -501,6 +502,8 @@ a1$bmi1 <- as.numeric(gsub('[<|>|=]','',a1$bmi))
 a1$bmicat <- cut(a1$bmi1, c(0,18.5,25,30,35,Inf),right=F,
                  labels = c('Underweight','Normal','Overweight','Obese I','Obese II+'))
 a1$bmicat <- as.character(a1$bmicat)
+a1$bmicat[a1$raceethn1=='ASIAN' & (a1$bmi1>=23 & a1$bmi1<27.5)] <- 'Overweight'
+a1$bmicat[a1$raceethn1=='ASIAN' & (a1$bmi1>=27.5 & a1$bmi1<35)] <- 'Obese I'
 a1$bmicat[is.na(a1$bmicat)] <- 'Unknown'
 a1$bmicat <- factor(a1$bmicat,
                     levels = c('Underweight','Normal','Overweight','Obese I','Obese II+','Unknown'))
@@ -534,14 +537,20 @@ a1$menop[is.na(a1$menop) & a1$dxage<=51] <- '0'
 #                                                    x[is.na(x)] <- 2
 #                                                    x <- factor(x, levels=c(1,0,2),labels = c('Yes','No','Unknown'))
 #                                                    x
-#                                                  })
-a1$diabetes[is.na(a1$diabetes)] <- 0
-a1$diab <- factor(a1$diabetes,levels=c(1,0),labels = c('Yes','No/Unknown'))
+# baseline diabetes                                                 })
+a1$diab_bl <- ifelse(a1$daysto_diabetes<=0, 1, 0)
+a1$diab_bl[is.na(a1$diab_bl)] <- 0
+a1$diab_bl <- factor(a1$diab_bl,levels=c(1,0),labels = c('Yes','No'))
 
-# dyslipidemia
-a1$dyslipidemia[is.na(a1$dyslipidemia)] <- 0
-a1$dyslipidemia <- factor(a1$dyslipidemia,levels=c(1,0),
-                          labels = c('Yes','No/Unknown'))
+# baseline dyslipidemia
+a1$dyslipid_bl <- ifelse(a1$daysto_dyslipidemia<=0, 1, 0)
+a1$dyslipid_bl[is.na(a1$dyslipid_bl)] <- 0
+a1$dyslipid_bl <- factor(a1$dyslipid_bl,levels=c(1,0),labels = c('Yes','No'))
+
+# baseline hypertension
+a1$htn_bl <- ifelse(a1$daysto_phase_htn<=0, 1, 0)
+a1$htn_bl[is.na(a1$htn_bl)] <- 0
+a1$htn_bl <- factor(a1$htn_bl,levels=c(1,0),labels = c('Yes','No'))
 
 # household income
 a1$hhincome1 <- rowSums(a1[,grep('famincome[1-9]$',names(a1), value=T)], na.rm = T)
@@ -562,8 +571,8 @@ a1$edu4 <- rowSums(a1[,grep('education[7-8]$',names(a1), value=T)], na.rm = T)
 #### for CASES AND CONTROL2
 # recode categorical variables
 # age groups
-a2$agegrp <- cut(a2$dxage, c(0, 40, 50, 60, 70, 80, 101), right=F,
-                 labels = c('<40 yo','40-49','50-59','60-69','70-79','80+ yo'))
+a2$agegrp <- cut(a2$dxage, c(0, 40, 50, 60, 70, 101), right=F,
+                 labels = c('<40 yo','40-49','50-59','60-69','70+ yo'))
 
 # race
 a2$raceethn1 <- factor(a2$raceethn1, 
@@ -691,10 +700,10 @@ a1$cvdcombo_grp_inc <- ifelse(a1$ischemic_heart_disease_grp_inc==1 |
                             a1$cardiomyopathy_heart_failure_grp_inc==1, 1, 0)
 
 
-a1$cvdcombo_grp_incdt <- as.Date(apply(a1[,c("ischemic_heart_disease_grp_incdt",
+a1$cvdcombo_grp_incdt <- apply(a1[,c("ischemic_heart_disease_grp_incdt",
                                              "stroke_tia_grp_incdt",
                                              "cardiomyopathy_heart_failure_grp_incdt")],
-                                       1,min,na.rm=T))
+                                       1,min,na.rm=T)
 
 
 # define censoring time
@@ -843,6 +852,50 @@ a2$cvdcombo_grp_rec_fu[which(a2$cvdcombo_grp_rec==0)] <-
 
 
 
+################################################################################
+# Define CVD risk factor outcomes
+
+# define incident diabetes, hypertension and dyslipidemia
+a1$cvdrf_diab <- ifelse(a1$daysto_diabetes>0,1,0)
+a1$cvdrf_diab[is.na(a1$cvdrf_diab)] <- 0
+a1$cvdrf_htn <- ifelse(a1$daysto_phase_htn>0,1,0)
+a1$cvdrf_htn[is.na(a1$cvdrf_htn)] <- 0
+a1$cvdrf_dyslipid <- ifelse(a1$daysto_dyslipidemia>0,1,0)
+a1$cvdrf_dyslipid[is.na(a1$cvdrf_dyslipid)] <- 0
+
+
+# combined event of diabetes, hypertension or dyslipidemia
+a1$cvdrfcombo <- ifelse(a1$cvdrf_diab==1 | 
+                                a1$cvdrf_htn==1 | 
+                                a1$cvdrf_dyslipid==1, 1, 0)
+
+
+a1$cvdrfcombo_dt <- apply(a1[,c("daysto_diabetes","daysto_phase_htn",
+                                     "daysto_dyslipidemia")],1,function(x){
+                                       min(x[x>0], na.rm=T)
+                                     })
+a1$cvdrfcombo_dt[a1$cvdrfcombo_dt==Inf] <- NA
+
+# define censoring time
+a1$censor_dt <- apply(a1[,c("daysto_death","daysto_enr_end","daysto_end_study")],1,min,na.rm=T)
+
+
+# calculate time of follow up
+a1$cvdrf_diab_fu <- a1$daysto_diabetes
+a1$cvdrf_diab_fu[which(a1$cvdrf_diab==0)] <- a1$censor_dt[which(a1$cvdrf_diab==0)] 
+
+a1$cvdrf_htn_fu <- a1$daysto_phase_htn
+a1$cvdrf_htn_fu[which(a1$cvdrf_htn==0)] <- a1$censor_dt[which(a1$cvdrf_htn==0)] 
+
+a1$cvdrf_dyslipid_fu <- a1$daysto_dyslipidemia
+a1$cvdrf_dyslipid_fu[which(a1$cvdrf_dyslipid==0)] <- a1$censor_dt[which(a1$cvdrf_dyslipid==0)] 
+
+a1$cvdrfcombo_fu <- a1$cvdrfcombo_dt
+a1$cvdrfcombo_fu[which(a1$cvdrfcombo==0)] <- a1$censor_dt[which(a1$cvdrfcombo==0)] 
+
+
+
+
 
 
 ################################################################################
@@ -855,17 +908,19 @@ a1$group1 <- factor(a1$group, levels = c('Control','Case'))
 # relevel bmi var
 a1$bmicat1 <- factor(a1$bmicat, levels = c('Normal','Underweight','Overweight','Obese I','Obese II+','Unknown'))
 
+# relevel baseline diabetes 
+a1$diab_bl1 <- factor(a1$diab_bl, levels = c('No','Yes'))
 
 # cut continuous var into quantiles
 # variables to analyze
 varlist <- c('enr_len','cops2','bmi1','agegrp','raceethn1',
-             'bmicat','smok','menop','diab','dyslipidemia',
+             'bmicat','smok','menop','diab_bl','htn_bl','dyslipid_bl',
              "systolic" ,"diastolic","glu_f","hdl","hgba1c",
              "ldl_clc_ns","tot_choles","trigl_ns",
              'medhousincome','houspoverty', "edu1","edu2","edu3","edu4")
 
 a1$glu_q <- quantileCut(a1$glu_f,4)
-a1[,paste0(varlist[14:24],'_q')] <- lapply(a1[,varlist[14:24]], function(x) {
+a1[,paste0(varlist[15:25],'_q')] <- lapply(a1[,varlist[15:25]], function(x) {
   x <- factor(quantileCut(x,4),labels = c('Q1','Q2','Q3','Q4'))
   x <- as.character(x)
   x[is.na(x)] <- 'Missing'
@@ -888,9 +943,6 @@ a1$diastolic_2 <- as.character(a1$diastolic_2)
 a1$diastolic_2[is.na(a1$diastolic_2)] <- 'Missing'
 a1$diastolic_2 <- factor(a1$diastolic_2,levels = c('Normal','Abnormal','Missing'))
 
-# relevel dyslipidemia
-a1$dyslipidemia2 <- factor(a1$dyslipidemia, levels=c('No/Unknown','Yes'))
-
 
 # for CASES and CONTROL2
 # relevel the group var, with control as referent
@@ -898,6 +950,10 @@ a2$group1 <- factor(a2$group, levels = c('Control','Case'))
 
 # relevel bmi var
 a2$bmicat1 <- factor(a2$bmicat, levels = c('Normal','Underweight','Overweight','Obese I','Obese II+','Unknown'))
+
+# relevel dyslipidemia
+a1$dyslipid_bl2 <- factor(a1$dyslipid_bl, levels=c('No/Unknown','Yes'))
+
 
 library(lsr)
 # cut continuous var into quantiles
