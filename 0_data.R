@@ -212,7 +212,6 @@ write_csv(labs_w,'labs wide.csv')
 
 ################################################################################
 # Clean CVD outcome data
-names(cvd)
 ## consolidate duplicated cvd group
 #cvd$CVD_condition[cvd$CVD_condition=='Percutaneous transluminal coronary angioplasty status'] <- 'Percutaneous transluminal coronary angioplasty'
 
@@ -220,6 +219,17 @@ names(cvd)
 ### condition groups
 
 names(cvd) <- tolower(names(cvd))
+# recode cvd group
+cvd$cvd_group[cvd$cvd_condition=='Heart Failure'] <- 'Heart Failure'
+cvd$cvd_group[cvd$cvd_condition=='Cardiomyopathy'] <- 'Cardiomyopathy'
+cvd$cvd_group[cvd$cvd_condition=='Transient Ischemic Attack (TIA)'] <- 'TIA'
+cvd$cvd_group[cvd$cvd_condition %in% c('Acute Ischemic stroke',
+                                       'Acute myocardial infarction',
+                                       'Intracerebral hemorrhage',
+                                       'Other cerebrovascular disease',
+                                       'Retinal vascular occlusion',
+                                       'Subarachnoid hemorrhage')] <- 'Stroke'
+
 #### define true incidence and prevalence
 cvd2 <- dcast(data=cvd, num7_studyid ~ cvd_group,
               value.var = 'daysto_cvd_event', min,na.rm=T)
@@ -273,8 +283,8 @@ cvd2r[,cvd_grpr] <- lapply(cvd2r[,-1], function(x) {
 })
 
 #### merge all together
-cvd2list[[10]] <- cvd2
-cvd2list[[11]] <- cvd2r
+cvd2list[[12]] <- cvd2
+cvd2list[[13]] <- cvd2r
 cvd2_final <- Reduce(function(...) merge(...,by='num7_studyid', all.x=T), cvd2list)
 
 
@@ -691,19 +701,22 @@ a2$edu4 <- rowSums(a2[,grep('education[7-8]$',names(a2), value=T)], na.rm = T)
 # define true incindence
 # combined event of ischemic heart disease, stroke/TIA, cardiomyopathy/heart failure
 a1$cvdcombo_grp_prev <- ifelse(a1$ischemic_heart_disease_grp_prev==1 | 
-                                a1$stroke_tia_grp_prev==1 | 
-                                a1$cardiomyopathy_heart_failure_grp_prev==1, 1, 0)
+                                a1$stroke_grp_prev==1 | 
+                                a1$cardiomyopathy_grp_prev==1|
+                                 a1$heart_failure_grp_prev==1, 1, 0)
 
 
 a1$cvdcombo_grp_inc <- ifelse(a1$ischemic_heart_disease_grp_inc==1 | 
-                            a1$stroke_tia_grp_inc==1 | 
-                            a1$cardiomyopathy_heart_failure_grp_inc==1, 1, 0)
+                                a1$stroke_grp_inc==1 |  
+                                a1$cardiomyopathy_grp_inc==1|
+                                a1$heart_failure_grp_inc==1, 1, 0)
 
 
 a1$cvdcombo_grp_incdt <- apply(a1[,c("ischemic_heart_disease_grp_incdt",
-                                             "stroke_tia_grp_incdt",
-                                             "cardiomyopathy_heart_failure_grp_incdt")],
-                                       1,min,na.rm=T)
+                                     "stroke_grp_incdt",
+                                     "cardiomyopathy_grp_incdt",
+                                     "heart_failure_grp_incdt"
+                                     )],1,min,na.rm=T)
 
 
 # define censoring time
@@ -715,13 +728,17 @@ a1$ischemic_heart_disease_grp_inc_fu <- a1$ischemic_heart_disease_grp_incdt
 a1$ischemic_heart_disease_grp_inc_fu[which(a1$ischemic_heart_disease_grp_inc==0)] <- 
   a1$censor_dt[which(a1$ischemic_heart_disease_grp_inc==0)] 
 
-a1$stroke_tia_grp_inc_fu <- a1$stroke_tia_grp_incdt
-a1$stroke_tia_grp_inc_fu[which(a1$stroke_tia_grp_inc==0)] <- 
-  a1$censor_dt[which(a1$stroke_tia_grp_inc==0)]
+a1$stroke_grp_inc_fu <- a1$stroke_grp_incdt
+a1$stroke_grp_inc_fu[which(a1$stroke_grp_inc==0)] <- 
+  a1$censor_dt[which(a1$stroke_grp_inc==0)]
 
-a1$cardiomyopathy_heart_failure_grp_inc_fu <- a1$cardiomyopathy_heart_failure_grp_incdt
-a1$cardiomyopathy_heart_failure_grp_inc_fu[which(a1$cardiomyopathy_heart_failure_grp_inc==0)] <- 
-  a1$censor_dt[which(a1$cardiomyopathy_heart_failure_grp_inc==0)] 
+a1$cardiomyopathy_grp_inc_fu <- a1$cardiomyopathy_grp_incdt
+a1$cardiomyopathy_grp_inc_fu[which(a1$cardiomyopathy_grp_inc==0)] <- 
+  a1$censor_dt[which(a1$cardiomyopathy_grp_inc==0)] 
+
+a1$heart_failure_grp_inc_fu <- a1$heart_failure_grp_incdt
+a1$heart_failure_grp_inc_fu[which(a1$heart_failure_grp_inc==0)] <- 
+  a1$censor_dt[which(a1$heart_failure_grp_inc==0)] 
 
 a1$cvdcombo_grp_inc_fu <- a1$cvdcombo_grp_incdt
 a1$cvdcombo_grp_inc_fu[which(a1$cvdcombo_grp_inc==0)] <- 
@@ -731,14 +748,17 @@ a1$cvdcombo_grp_inc_fu[which(a1$cvdcombo_grp_inc==0)] <-
 # define any new onset = true incindence + recurrence
 # combined event of ischemic heart disease, stroke/TIA, cardiomyopathy/heart failure
 a1$cvdcombo_grp_rec <- ifelse(a1$ischemic_heart_disease_grp_rec==1 | 
-                                a1$stroke_tia_grp_rec==1 | 
-                                a1$cardiomyopathy_heart_failure_grp_rec==1, 1, 0)
+                                a1$stroke_grp_rec==1 |  
+                                a1$cardiomyopathy_grp_rec==1|
+                                a1$heart_failure_grp_rec==1, 1, 0)
 
 
 a1$cvdcombo_grp_recdt <- apply(a1[,c("ischemic_heart_disease_grp_recdt",
-                                             "stroke_tia_grp_recdt",
-                                             "cardiomyopathy_heart_failure_grp_recdt")],
-                                       1,min,na.rm=T)
+                                     "stroke_grp_recdt",
+                                     "cardiomyopathy_grp_recdt",
+                                     "heart_failure_grp_recdt"
+)],1,min,na.rm=T)
+
 
 
 # calculate time of follow up
@@ -746,18 +766,21 @@ a1$ischemic_heart_disease_grp_rec_fu <- a1$ischemic_heart_disease_grp_recdt
 a1$ischemic_heart_disease_grp_rec_fu[which(a1$ischemic_heart_disease_grp_rec==0)] <- 
   a1$censor_dt[which(a1$ischemic_heart_disease_grp_rec==0)] 
 
-a1$stroke_tia_grp_rec_fu <- a1$stroke_tia_grp_recdt
-a1$stroke_tia_grp_rec_fu[which(a1$stroke_tia_grp_rec==0)] <- 
-  a1$censor_dt[which(a1$stroke_tia_grp_rec==0)]
+a1$stroke_grp_rec_fu <- a1$stroke_grp_recdt
+a1$stroke_grp_rec_fu[which(a1$stroke_grp_rec==0)] <- 
+  a1$censor_dt[which(a1$stroke_grp_rec==0)]
 
-a1$cardiomyopathy_heart_failure_grp_rec_fu <- a1$cardiomyopathy_heart_failure_grp_recdt
-a1$cardiomyopathy_heart_failure_grp_rec_fu[which(a1$cardiomyopathy_heart_failure_grp_rec==0)] <- 
-  a1$censor_dt[which(a1$cardiomyopathy_heart_failure_grp_rec==0)]
+a1$cardiomyopathy_grp_rec_fu <- a1$cardiomyopathy_grp_recdt
+a1$cardiomyopathy_grp_rec_fu[which(a1$cardiomyopathy_grp_rec==0)] <- 
+  a1$censor_dt[which(a1$cardiomyopathy_grp_rec==0)] 
+
+a1$heart_failure_grp_rec_fu <- a1$heart_failure_grp_recdt
+a1$heart_failure_grp_rec_fu[which(a1$heart_failure_grp_rec==0)] <- 
+  a1$censor_dt[which(a1$heart_failure_grp_rec==0)] 
 
 a1$cvdcombo_grp_rec_fu <- a1$cvdcombo_grp_recdt
 a1$cvdcombo_grp_rec_fu[which(a1$cvdcombo_grp_rec==0)] <- 
   a1$censor_dt[which(a1$cvdcombo_grp_rec==0)] 
-
 
 
 
@@ -911,6 +934,9 @@ a1$bmicat1 <- factor(a1$bmicat, levels = c('Normal','Underweight','Overweight','
 # relevel baseline diabetes 
 a1$diab_bl1 <- factor(a1$diab_bl, levels = c('No','Yes'))
 
+# relevel dyslipidemia
+a1$dyslipid_bl1 <- factor(a1$dyslipid_bl, levels=c('No/Unknown','Yes'))
+
 # cut continuous var into quantiles
 # variables to analyze
 varlist <- c('enr_len','cops2','bmi1','agegrp','raceethn1',
@@ -951,8 +977,6 @@ a2$group1 <- factor(a2$group, levels = c('Control','Case'))
 # relevel bmi var
 a2$bmicat1 <- factor(a2$bmicat, levels = c('Normal','Underweight','Overweight','Obese I','Obese II+','Unknown'))
 
-# relevel dyslipidemia
-a1$dyslipid_bl2 <- factor(a1$dyslipid_bl, levels=c('No/Unknown','Yes'))
 
 
 library(lsr)
@@ -996,15 +1020,17 @@ a2$dyslipidemia2 <- factor(a2$dyslipidemia, levels=c('No/Unknown','Yes'))
 # CASES and CONTROL1
 # all sample
 a1_ihd <- which(a1$ischemic_heart_disease_grp_prev==0)
-a1_chf <- which(a1$cardiomyopathy_heart_failure_grp_prev==0)
-a1_stroke <- which(a1$stroke_tia_grp_prev==0)
+a1_hf <- which(a1$heart_failure_grp_prev==0)
+a1_cm <- which(a1$cardiomyopathy_grp_prev==0)
+a1_stroke <- which(a1$stroke_grp_prev==0)
 a1_combo <- which(a1$cvdcombo_grp_prev==0)
 
 # receive chemo
 id_chemo <- a1$num7_studyid[which(a1$chemo_yn=='Yes')]
 a1_chemo <- which(a1$num7_studyid %in% id_chemo | a1$num7_caseid %in% id_chemo)
 a1_ihd_chemo <- which(a1$ischemic_heart_disease_grp_prev==0 & (a1$num7_studyid %in% id_chemo | a1$num7_caseid %in% id_chemo))
-a1_chf_chemo <- which(a1$cardiomyopathy_heart_failure_grp_prev==0 & (a1$num7_studyid %in% id_chemo | a1$num7_caseid %in% id_chemo))
+a1_hf_chemo <- which(a1$heart_failure_grp_prev==0 & (a1$num7_studyid %in% id_chemo | a1$num7_caseid %in% id_chemo))
+a1_cm_chemo <- which(a1$cardiomyopathy_grp_prev==0 & (a1$num7_studyid %in% id_chemo | a1$num7_caseid %in% id_chemo))
 a1_stroke_chemo <- which(a1$stroke_tia_grp_prev==0 & (a1$num7_studyid %in% id_chemo | a1$num7_caseid %in% id_chemo))
 a1_combo_chemo <- which(a1$cvdcombo_grp_prev==0 & (a1$num7_studyid %in% id_chemo | a1$num7_caseid %in% id_chemo))
 
@@ -1012,24 +1038,27 @@ a1_combo_chemo <- which(a1$cvdcombo_grp_prev==0 & (a1$num7_studyid %in% id_chemo
 id_horm <- a1$num7_studyid[which(a1$horm_yn=='Yes')]
 a1_horm <- which(a1$num7_studyid %in% id_horm | a1$num7_caseid %in% id_horm)
 a1_ihd_horm <- which(a1$ischemic_heart_disease_grp_prev==0 & (a1$num7_studyid %in% id_horm | a1$num7_caseid %in% id_horm))
-a1_chf_horm <- which(a1$cardiomyopathy_heart_failure_grp_prev==0 & (a1$num7_studyid %in% id_horm | a1$num7_caseid %in% id_horm))
-a1_stroke_horm <- which(a1$stroke_tia_grp_prev==0 & (a1$num7_studyid %in% id_horm | a1$num7_caseid %in% id_horm))
+a1_hf_horm <- which(a1$heart_failure_grp_prev==0 & (a1$num7_studyid %in% id_horm | a1$num7_caseid %in% id_horm))
+a1_cm_horm <- which(a1$cardiomyopathy_grp_prev==0 & (a1$num7_studyid %in% id_horm | a1$num7_caseid %in% id_horm))
+a1_stroke_horm <- which(a1$stroke_grp_prev==0 & (a1$num7_studyid %in% id_horm | a1$num7_caseid %in% id_horm))
 a1_combo_horm <- which(a1$cvdcombo_grp_prev==0 & (a1$num7_studyid %in% id_horm | a1$num7_caseid %in% id_horm))
 
 # receive RT
 id_rad <- a1$num7_studyid[which(a1$rad_yn=='Yes')]
 a1_rad <- which(a1$num7_studyid %in% id_rad | a1$num7_caseid %in% id_rad)
 a1_ihd_rad <- which(a1$ischemic_heart_disease_grp_prev==0 & (a1$num7_studyid %in% id_rad | a1$num7_caseid %in% id_rad))
-a1_chf_rad <- which(a1$cardiomyopathy_heart_failure_grp_prev==0 & (a1$num7_studyid %in% id_rad | a1$num7_caseid %in% id_rad))
-a1_stroke_rad <- which(a1$stroke_tia_grp_prev==0 & (a1$num7_studyid %in% id_rad | a1$num7_caseid %in% id_rad))
+a1_hf_rad <- which(a1$heart_failure_grp_prev==0 & (a1$num7_studyid %in% id_rad | a1$num7_caseid %in% id_rad))
+a1_cm_rad <- which(a1$cardiomyopathy_grp_prev==0 & (a1$num7_studyid %in% id_rad | a1$num7_caseid %in% id_rad))
+a1_stroke_rad <- which(a1$stroke_grp_prev==0 & (a1$num7_studyid %in% id_rad | a1$num7_caseid %in% id_rad))
 a1_combo_rad <- which(a1$cvdcombo_grp_prev==0 & (a1$num7_studyid %in% id_rad | a1$num7_caseid %in% id_rad))
 
 # left side BC, receive RT
 id_rad_l <- a1$num7_studyid[which(a1$rad_yn=='Yes' & a1$laterality==2)]
 a1_rad_l <- which(a1$num7_studyid %in% id_rad_l | a1$num7_caseid %in% id_rad_l)
 a1_ihd_rad_l <- which(a1$ischemic_heart_disease_grp_prev==0 & (a1$num7_studyid %in% id_rad_l | a1$num7_caseid %in% id_rad_l))
-a1_chf_rad_l <- which(a1$cardiomyopathy_heart_failure_grp_prev==0 & (a1$num7_studyid %in% id_rad_l | a1$num7_caseid %in% id_rad_l))
-a1_stroke_rad_l <- which(a1$stroke_tia_grp_prev==0 & (a1$num7_studyid %in% id_rad_l | a1$num7_caseid %in% id_rad_l))
+a1_hf_rad_l <- which(a1$heart_failure_grp_prev==0 & (a1$num7_studyid %in% id_rad_l | a1$num7_caseid %in% id_rad_l))
+a1_cm_rad_l <- which(a1$cardiomyopathy_grp_prev==0 & (a1$num7_studyid %in% id_rad_l | a1$num7_caseid %in% id_rad_l))
+a1_stroke_rad_l <- which(a1$stroke_grp_prev==0 & (a1$num7_studyid %in% id_rad_l | a1$num7_caseid %in% id_rad_l))
 a1_combo_rad_l <- which(a1$cvdcombo_grp_prev==0 & (a1$num7_studyid %in% id_rad_l | a1$num7_caseid %in% id_rad_l))
 
 
@@ -1037,16 +1066,18 @@ a1_combo_rad_l <- which(a1$cvdcombo_grp_prev==0 & (a1$num7_studyid %in% id_rad_l
 id_rad_r <- a1$num7_studyid[which(a1$rad_yn=='Yes' & a1$laterality==1)]
 a1_rad_r <- which(a1$num7_studyid %in% id_rad_r | a1$num7_caseid %in% id_rad_r)
 a1_ihd_rad_r <- which(a1$ischemic_heart_disease_grp_prev==0 & (a1$num7_studyid %in% id_rad_r | a1$num7_caseid %in% id_rad_r))
-a1_chf_rad_r <- which(a1$cardiomyopathy_heart_failure_grp_prev==0 & (a1$num7_studyid %in% id_rad_r | a1$num7_caseid %in% id_rad_r))
-a1_stroke_rad_r <- which(a1$stroke_tia_grp_prev==0 & (a1$num7_studyid %in% id_rad_r | a1$num7_caseid %in% id_rad_r))
+a1_hf_rad_r <- which(a1$heart_failure_grp_prev==0 & (a1$num7_studyid %in% id_rad_r | a1$num7_caseid %in% id_rad_r))
+a1_cm_rad_r <- which(a1$cardiomyopathy_grp_prev==0 & (a1$num7_studyid %in% id_rad_r | a1$num7_caseid %in% id_rad_r))
+a1_stroke_rad_r <- which(a1$stroke_grp_prev==0 & (a1$num7_studyid %in% id_rad_r | a1$num7_caseid %in% id_rad_r))
 a1_combo_rad_r <- which(a1$cvdcombo_grp_prev==0 & (a1$num7_studyid %in% id_rad_r | a1$num7_caseid %in% id_rad_r))
 
 
 # CASES and CONTROL2
 # all sample
 a2_ihd <- which(a2$ischemic_heart_disease_grp_prev==0)
-a2_chf <- which(a2$cardiomyopathy_heart_failure_grp_prev==0)
-a2_stroke <- which(a2$stroke_tia_grp_prev==0)
+a2_hf <- which(a2$heart_failure_grp_prev==0)
+a2_cm <- which(a2$cardiomyopathy_grp_prev==0)
+a2_stroke <- which(a2$stroke_grp_prev==0)
 a2_combo <- which(a2$cvdcombo_grp_prev==0)
 
 

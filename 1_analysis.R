@@ -1,5 +1,5 @@
 # CVD and BC exploratory data analysis
-# Zaixing Shi, 12/10/2019
+# Zaixing Shi, 12/11/2019
 
 
 library(tidyverse)
@@ -79,7 +79,7 @@ write_csv(table1_rad,'table1_rad.csv')
 
 # get cvd prevalence variables
 cvdvars <- grep('_prev$',names(a1),value = T)
-cvdvars <- cvdvars[c(1,2,16,19,4:9,c(14,15,16,19,17,11:13,18,22,24,25,26,21,10,20,23,27:32))]
+cvdvars <- cvdvars[c(1:3,5,4,6:11,c(16,17,18,21,19,13:15,20,24,26,27,28,23,12,22,25,29:33))]
 # function to create
 tab2 <- function(d,x){
   d[,x] <- factor(d[,x],levels=c(0,1),labels = c('No','Yes'))
@@ -131,7 +131,7 @@ write_csv(table2_prev_cvd_rad[table2_prev_cvd_rad$V1=='Yes',], 'table2_prev_cvd_
 
 ## True incidence
 cvdvars <- grep('_inc$',names(a1),value = T)
-cvdvars <- cvdvars[c(1,2,16,19,4:9,c(14,15,16,19,17,11:13,18,22,24,25,26,21,10,20,23,27:32))]
+cvdvars <- cvdvars[c(1:3,5,4,6:11,c(16,17,18,21,19,13:15,20,24,26,27,28,23,12,22,25,29:33))]
 
 
 ## compare incidence between all cases and controls
@@ -160,7 +160,7 @@ write_csv(table2_cvd_rad[table2_cvd_rad$V1=='Yes',], 'table2_cvd_rad.csv')
 
 ## Any new onset = true incidence + recurrence
 cvdvars <- grep('_rec$',names(a1),value = T)
-cvdvars <- cvdvars[c(1,2,16,19,4:9,c(14,15,16,19,17,11:13,18,22,24,25,26,21,10,20,23,27:32))]
+cvdvars <- cvdvars[c(1:3,5,4,6:11,c(16,17,18,21,19,13:15,20,24,26,27,28,23,12,22,25,29:33))]
 
 ## compare incidence between all cases and controls
 table2_rec_cvd <- do.call(rbind,lapply(cvdvars ,function(x) tab2(a1,x)))
@@ -205,19 +205,19 @@ fit1 <- survfit(surv_object ~ group, data = a1[a1_ihd,])
 splots[[1]] <- ggsurvplot(fit1, data = a1[a1_ihd,],fun = "event", size=1, risk.table = T,pval = T,
            censor=F,conf.int = T,palette = 'jco',title='Ischemic heart disease',xlab='Time/months')
 
-# stroke/tia
-surv_object <- Surv(time = floor(a1[a1_stroke,]$stroke_tia_grp_inc_fu/30), 
-                    event = a1[a1_stroke,]$stroke_tia_grp_inc)
+# stroke
+surv_object <- Surv(time = floor(a1[a1_stroke,]$stroke_grp_inc_fu/30), 
+                    event = a1[a1_stroke,]$stroke_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1[a1_stroke,])
 splots[[2]] <- ggsurvplot(fit1, data = a1[a1_stroke,],fun = "event", size=1, risk.table = T,pval = T,
            censor=F,conf.int = T,palette = 'jco',title='Stroke/TIA',xlab='Time/months')
 
-# cardiomyopathy/heart failure
-surv_object <- Surv(time = floor(a1[a1_chf,]$cardiomyopathy_heart_failure_grp_inc_fu/30), 
-                    event = a1[a1_chf,]$cardiomyopathy_heart_failure_grp_inc)
-fit1 <- survfit(surv_object ~ group, data = a1[a1_chf,])
-splots[[3]] <- ggsurvplot(fit1, data = a1[a1_chf,],fun = "event", size=1, risk.table = T,pval = T,
-           censor=F,conf.int = T,palette = 'jco',title='Cardiomiopathy/heart failure',xlab='Time/months')
+# heart failure
+surv_object <- Surv(time = floor(a1[a1_hf,]$heart_failure_grp_inc_fu/30), 
+                    event = a1[a1_hf,]$heart_failure_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_hf,])
+splots[[3]] <- ggsurvplot(fit1, data = a1[a1_hf,],fun = "event", size=1, risk.table = T,pval = T,
+           censor=F,conf.int = T,palette = 'jco',title='Heart failure',xlab='Time/months')
 
 # 3 cvd combined
 surv_object <- Surv(time = floor(a1[a1_combo,]$cvdcombo_grp_inc_fu/30), 
