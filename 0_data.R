@@ -1024,6 +1024,10 @@ a1_hf <- which(a1$heart_failure_grp_prev==0)
 a1_cm <- which(a1$cardiomyopathy_grp_prev==0)
 a1_stroke <- which(a1$stroke_grp_prev==0)
 a1_combo <- which(a1$cvdcombo_grp_prev==0)
+a1_diab <- which(a1$diab_bl=='No')
+a1_htn <- which(a1$htn_bl=='No')
+a1_dyslipid <- which(a1$dyslipid_bl=='No')
+a1_rfcombo <- which(a1$diab_bl=='No' & a1$htn_bl=='No' & a1$dyslipid_bl=='No')
 
 # receive chemo
 id_chemo <- a1$num7_studyid[which(a1$chemo_yn=='Yes')]
@@ -1031,8 +1035,12 @@ a1_chemo <- which(a1$num7_studyid %in% id_chemo | a1$num7_caseid %in% id_chemo)
 a1_ihd_chemo <- which(a1$ischemic_heart_disease_grp_prev==0 & (a1$num7_studyid %in% id_chemo | a1$num7_caseid %in% id_chemo))
 a1_hf_chemo <- which(a1$heart_failure_grp_prev==0 & (a1$num7_studyid %in% id_chemo | a1$num7_caseid %in% id_chemo))
 a1_cm_chemo <- which(a1$cardiomyopathy_grp_prev==0 & (a1$num7_studyid %in% id_chemo | a1$num7_caseid %in% id_chemo))
-a1_stroke_chemo <- which(a1$stroke_tia_grp_prev==0 & (a1$num7_studyid %in% id_chemo | a1$num7_caseid %in% id_chemo))
+a1_stroke_chemo <- which(a1$stroke_grp_prev==0 & (a1$num7_studyid %in% id_chemo | a1$num7_caseid %in% id_chemo))
 a1_combo_chemo <- which(a1$cvdcombo_grp_prev==0 & (a1$num7_studyid %in% id_chemo | a1$num7_caseid %in% id_chemo))
+a1_diab_chemo <- which(a1$diab_bl=='No' & (a1$num7_studyid %in% id_chemo | a1$num7_caseid %in% id_chemo))
+a1_htn_chemo <- which(a1$htn_bl=='No' & (a1$num7_studyid %in% id_chemo | a1$num7_caseid %in% id_chemo))
+a1_dyslipid_chemo <- which(a1$dyslipid_bl=='No' & (a1$num7_studyid %in% id_chemo | a1$num7_caseid %in% id_chemo))
+a1_rfcombo_chemo <- which(a1$diab_bl=='No' & a1$htn_bl=='No' & a1$dyslipid_bl=='No' & (a1$num7_studyid %in% id_chemo | a1$num7_caseid %in% id_chemo))
 
 # receive HT
 id_horm <- a1$num7_studyid[which(a1$horm_yn=='Yes')]
@@ -1042,6 +1050,10 @@ a1_hf_horm <- which(a1$heart_failure_grp_prev==0 & (a1$num7_studyid %in% id_horm
 a1_cm_horm <- which(a1$cardiomyopathy_grp_prev==0 & (a1$num7_studyid %in% id_horm | a1$num7_caseid %in% id_horm))
 a1_stroke_horm <- which(a1$stroke_grp_prev==0 & (a1$num7_studyid %in% id_horm | a1$num7_caseid %in% id_horm))
 a1_combo_horm <- which(a1$cvdcombo_grp_prev==0 & (a1$num7_studyid %in% id_horm | a1$num7_caseid %in% id_horm))
+a1_diab_horm <- which(a1$diab_bl=='No'& (a1$num7_studyid %in% id_horm | a1$num7_caseid %in% id_horm))
+a1_htn_horm <- which(a1$htn_bl=='No'& (a1$num7_studyid %in% id_horm | a1$num7_caseid %in% id_horm))
+a1_dyslipid_horm <- which(a1$dyslipid_bl=='No'& (a1$num7_studyid %in% id_horm | a1$num7_caseid %in% id_horm))
+a1_rfcombo_horm <- which(a1$diab_bl=='No' & a1$htn_bl=='No' & a1$dyslipid_bl=='No'& (a1$num7_studyid %in% id_horm | a1$num7_caseid %in% id_horm))
 
 # receive RT
 id_rad <- a1$num7_studyid[which(a1$rad_yn=='Yes')]
@@ -1051,6 +1063,10 @@ a1_hf_rad <- which(a1$heart_failure_grp_prev==0 & (a1$num7_studyid %in% id_rad |
 a1_cm_rad <- which(a1$cardiomyopathy_grp_prev==0 & (a1$num7_studyid %in% id_rad | a1$num7_caseid %in% id_rad))
 a1_stroke_rad <- which(a1$stroke_grp_prev==0 & (a1$num7_studyid %in% id_rad | a1$num7_caseid %in% id_rad))
 a1_combo_rad <- which(a1$cvdcombo_grp_prev==0 & (a1$num7_studyid %in% id_rad | a1$num7_caseid %in% id_rad))
+a1_diab_rad <- which(a1$diab_bl=='No'& (a1$num7_studyid %in% id_rad | a1$num7_caseid %in% id_rad))
+a1_htn_rad <- which(a1$htn_bl=='No'& (a1$num7_studyid %in% id_rad | a1$num7_caseid %in% id_rad))
+a1_dyslipid_rad <- which(a1$dyslipid_bl=='No'& (a1$num7_studyid %in% id_rad | a1$num7_caseid %in% id_rad))
+a1_rfcombo_rad <- which(a1$diab_bl=='No' & a1$htn_bl=='No' & a1$dyslipid_bl=='No'& (a1$num7_studyid %in% id_rad | a1$num7_caseid %in% id_rad))
 
 # left side BC, receive RT
 id_rad_l <- a1$num7_studyid[which(a1$rad_yn=='Yes' & a1$laterality==2)]

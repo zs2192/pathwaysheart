@@ -188,6 +188,116 @@ write_csv(table2_rec_cvd_rad[table2_rec_cvd_rad$V1=='Yes',], 'table2_rec_cvd_rad
 
 
 
+################################################################################
+# Compare cvd risk factor frequencies between cases and controls
+
+## cvd rf variables
+cvdrfvars <- c("cvdrf_diab","cvdrf_htn","cvdrf_dyslipid","cvdrfcombo")
+
+## compare incidence between all cases and controls
+table2_cvdrf <- do.call(rbind,lapply(cvdrfvars ,function(x) tab2(a1,x)))
+table2_cvdrf <- data.frame(cbind(row.names(table2_cvdrf), table2_cvdrf))
+
+## compare incidence between cases receiving chemo and controls
+table2_cvdrf_chemo <- do.call(rbind,lapply(cvdrfvars,function(x) tab2(a1[a1_chemo,],x)))
+table2_cvdrf_chemo <- data.frame(cbind(row.names(table2_cvdrf_chemo), table2_cvdrf_chemo))
+
+## compare incidence between cases receiving horm and controls
+table2_cvdrf_horm <- do.call(rbind,lapply(cvdrfvars,function(x) tab2(a1[a1_horm,],x)))
+table2_cvdrf_horm <- data.frame(cbind(row.names(table2_cvdrf_horm), table2_cvdrf_horm))
+
+## compare incidence between cases receiving rad and controls
+table2_cvdrf_rad <- do.call(rbind,lapply(cvdrfvars,function(x) tab2(a1[a1_rad,],x)))
+table2_cvdrf_rad <- data.frame(cbind(row.names(table2_cvdrf_rad), table2_cvdrf_rad))
+
+
+write_csv(table2_cvdrf[table2_cvdrf$V1=='Yes',], 'table2_cvdrf.csv')
+write_csv(table2_cvdrf_chemo[table2_cvdrf_chemo$V1=='Yes',], 'table2_cvdrf_chemo.csv')
+write_csv(table2_cvdrf_horm[table2_cvdrf_horm$V1=='Yes',], 'table2_cvdrf_horm.csv')
+write_csv(table2_cvdrf_rad[table2_cvdrf_rad$V1=='Yes',], 'table2_cvdrf_rad.csv')
+
+
+
+
+
+
+################################################################################
+# Aim 1a - log rank test at 5 and 10 year follow up
+
+# for all cases v controls
+
+# true incidence
+
+# function to calculate time specific incidence rate
+inc_rate <- function(index, outcomevar, timevar){
+  surv_dat <- a1[index,c(outcomevar,timevar,'group')]
+  surv_dat$time <- round(surv_dat[,2]/30)
+  surv_object <- Surv(time = surv_dat$time, 
+                      event = surv_dat[,1])
+  fit1 <- survfit(surv_object ~ group, data = surv_dat)
+  sum1 <- summary(fit1, times=c(24,60,120))
+  sum2 <- 100*(1-cbind(sum1$surv,sum1$upper,sum1$lower))
+  sum2 <- cbind(round2(sum2[,1],1),
+                paste0("(",round2(sum2[,2],1),", ",round2(sum2[,3],1),")"))
+  sum3 <- cbind(outcomevar,sum2[1:3,],'',sum2[4:6,])
+  sum3
+}
+
+
+inc_all <- data.frame(rbind(inc_rate(a1_ihd,'ischemic_heart_disease_grp_inc','ischemic_heart_disease_grp_inc_fu'),
+                            '',inc_rate(a1_stroke,'stroke_grp_inc','stroke_grp_inc_fu'),
+                            '',inc_rate(a1_hf,'heart_failure_grp_inc','heart_failure_grp_inc_fu'),
+                            '',inc_rate(a1_cm,'cardiomyopathy_grp_inc','cardiomyopathy_grp_inc_fu'),
+                            '',inc_rate(a1_combo,'cvdcombo_grp_inc','cvdcombo_grp_inc_fu'),
+                            '',inc_rate(a1_diab,'cvdrf_diab','cvdrf_diab_fu'),
+                            '',inc_rate(a1_htn,'cvdrf_htn','cvdrf_htn_fu'),
+                            '',inc_rate(a1_dyslipid,'cvdrf_dyslipid','cvdrf_dyslipid_fu'),
+                            '',inc_rate(a1_rfcombo,'cvdrfcombo','cvdrfcombo_fu')))
+
+
+inc_chemo <- data.frame(rbind(inc_rate(a1_ihd_chemo,'ischemic_heart_disease_grp_inc','ischemic_heart_disease_grp_inc_fu'),
+                              '',inc_rate(a1_stroke_chemo,'stroke_grp_inc','stroke_grp_inc_fu'),
+                              '',inc_rate(a1_hf_chemo,'heart_failure_grp_inc','heart_failure_grp_inc_fu'),
+                              '',inc_rate(a1_cm_chemo,'cardiomyopathy_grp_inc','cardiomyopathy_grp_inc_fu'),
+                              '',inc_rate(a1_combo_chemo,'cvdcombo_grp_inc','cvdcombo_grp_inc_fu'),
+                              '',inc_rate(a1_diab_chemo,'cvdrf_diab','cvdrf_diab_fu'),
+                              '',inc_rate(a1_htn_chemo,'cvdrf_htn','cvdrf_htn_fu'),
+                              '',inc_rate(a1_dyslipid_chemo,'cvdrf_dyslipid','cvdrf_dyslipid_fu'),
+                              '',inc_rate(a1_rfcombo_chemo,'cvdrfcombo','cvdrfcombo_fu')))
+
+
+inc_horm <- data.frame(rbind(inc_rate(a1_ihd_horm,'ischemic_heart_disease_grp_inc','ischemic_heart_disease_grp_inc_fu'),
+                              '',inc_rate(a1_stroke_horm,'stroke_grp_inc','stroke_grp_inc_fu'),
+                              '',inc_rate(a1_hf_horm,'heart_failure_grp_inc','heart_failure_grp_inc_fu'),
+                              '',inc_rate(a1_cm_horm,'cardiomyopathy_grp_inc','cardiomyopathy_grp_inc_fu'),
+                              '',inc_rate(a1_combo_horm,'cvdcombo_grp_inc','cvdcombo_grp_inc_fu'),
+                              '',inc_rate(a1_diab_horm,'cvdrf_diab','cvdrf_diab_fu'),
+                              '',inc_rate(a1_htn_horm,'cvdrf_htn','cvdrf_htn_fu'),
+                              '',inc_rate(a1_dyslipid_horm,'cvdrf_dyslipid','cvdrf_dyslipid_fu'),
+                              '',inc_rate(a1_rfcombo_horm,'cvdrfcombo','cvdrfcombo_fu')))
+
+
+inc_rad <- data.frame(rbind(inc_rate(a1_ihd_rad,'ischemic_heart_disease_grp_inc','ischemic_heart_disease_grp_inc_fu'),
+                              '',inc_rate(a1_stroke_rad,'stroke_grp_inc','stroke_grp_inc_fu'),
+                              '',inc_rate(a1_hf_rad,'heart_failure_grp_inc','heart_failure_grp_inc_fu'),
+                              '',inc_rate(a1_cm_rad,'cardiomyopathy_grp_inc','cardiomyopathy_grp_inc_fu'),
+                              '',inc_rate(a1_combo_rad,'cvdcombo_grp_inc','cvdcombo_grp_inc_fu'),
+                              '',inc_rate(a1_diab_rad,'cvdrf_diab','cvdrf_diab_fu'),
+                              '',inc_rate(a1_htn_rad,'cvdrf_htn','cvdrf_htn_fu'),
+                              '',inc_rate(a1_dyslipid_rad,'cvdrf_dyslipid','cvdrf_dyslipid_fu'),
+                              '',inc_rate(a1_rfcombo_rad,'cvdrfcombo','cvdrfcombo_fu')))
+
+
+
+inc_combined <- cbind(inc_all, inc_chemo, inc_horm, inc_rad)
+
+
+write_csv(inc_combined, 'incidence_all.csv')
+
+
+
+
+
 
 
 ################################################################################
@@ -210,7 +320,7 @@ surv_object <- Surv(time = floor(a1[a1_stroke,]$stroke_grp_inc_fu/30),
                     event = a1[a1_stroke,]$stroke_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1[a1_stroke,])
 splots[[2]] <- ggsurvplot(fit1, data = a1[a1_stroke,],fun = "event", size=1, risk.table = T,pval = T,
-           censor=F,conf.int = T,palette = 'jco',title='Stroke/TIA',xlab='Time/months')
+           censor=F,conf.int = T,palette = 'jco',title='Stroke',xlab='Time/months')
 
 # heart failure
 surv_object <- Surv(time = floor(a1[a1_hf,]$heart_failure_grp_inc_fu/30), 
@@ -219,50 +329,63 @@ fit1 <- survfit(surv_object ~ group, data = a1[a1_hf,])
 splots[[3]] <- ggsurvplot(fit1, data = a1[a1_hf,],fun = "event", size=1, risk.table = T,pval = T,
            censor=F,conf.int = T,palette = 'jco',title='Heart failure',xlab='Time/months')
 
-# 3 cvd combined
+# cardiomyopathy
+surv_object <- Surv(time = floor(a1[a1_cm,]$cardiomyopathy_grp_inc_fu/30), 
+                    event = a1[a1_cm,]$cardiomyopathy_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_cm,])
+splots[[4]] <- ggsurvplot(fit1, data = a1[a1_cm,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Cardiomyopathy',xlab='Time/months')
+
+# 4 cvd combined
 surv_object <- Surv(time = floor(a1[a1_combo,]$cvdcombo_grp_inc_fu/30), 
                     event = a1[a1_combo,]$cvdcombo_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1[a1_combo,])
-splots[[4]] <- ggsurvplot(fit1, data = a1[a1_combo,],fun = "event", size=1, risk.table = T,pval = T,
-           censor=F,conf.int = T,palette = 'jco',title='Any of the 3 outcomes',xlab='Time/months')
+splots[[5]] <- ggsurvplot(fit1, data = a1[a1_combo,],fun = "event", size=1, risk.table = T,pval = T,
+           censor=F,conf.int = T,palette = 'jco',title='Any of the 4 outcomes',xlab='Time/months')
 
-fig1 <- arrange_ggsurvplots(splots,ncol = 2, nrow = 2, risk.table.height = 0.2)
-ggsave("fig1.png", fig1,width = 13.5, height = 12)
+fig1 <- arrange_ggsurvplots(splots,ncol = 2, nrow = 3, risk.table.height = 0.25)
+ggsave("fig1.png", fig1,width = 13, height = 18)
 
 
 # any new onset=true incidence+recurrence
 splots <- list()
 # ischemic heart disease
-surv_object <- Surv(time = floor(a1$ischemic_heart_disease_grp_rec_fu/30), 
-                    event = a1$ischemic_heart_disease_grp_rec)
-fit1 <- survfit(surv_object ~ group, data = a1)
-splots[[1]] <- ggsurvplot(fit1, data = a1,fun = "event", size=1, risk.table = T,pval = T,
+surv_object <- Surv(time = floor(a1[a1_ihd,]$ischemic_heart_disease_grp_rec_fu/30), 
+                    event = a1[a1_ihd,]$ischemic_heart_disease_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_ihd,])
+splots[[1]] <- ggsurvplot(fit1, data = a1[a1_ihd,],fun = "event", size=1, risk.table = T,pval = T,
                           censor=F,conf.int = T,palette = 'jco',title='Ischemic heart disease',xlab='Time/months')
 
-# stroke/tia
-surv_object <- Surv(time = floor(a1$stroke_tia_grp_rec_fu/30), 
-                    event = a1$stroke_tia_grp_rec)
-fit1 <- survfit(surv_object ~ group, data = a1)
-splots[[2]] <- ggsurvplot(fit1, data = a1,fun = "event", size=1, risk.table = T,pval = T,
-                          censor=F,conf.int = T,palette = 'jco',title='Stroke/TIA',xlab='Time/months')
+# stroke
+surv_object <- Surv(time = floor(a1[a1_stroke,]$stroke_grp_rec_fu/30), 
+                    event = a1[a1_stroke,]$stroke_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_stroke,])
+splots[[2]] <- ggsurvplot(fit1, data = a1[a1_stroke,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Stroke',xlab='Time/months')
 
-# cardiomyopathy/heart failure
-surv_object <- Surv(time = floor(a1$cardiomyopathy_heart_failure_grp_rec_fu/30), 
-                    event = a1$cardiomyopathy_heart_failure_grp_rec)
-fit1 <- survfit(surv_object ~ group, data = a1)
-splots[[3]] <- ggsurvplot(fit1, data = a1,fun = "event", size=1, risk.table = T,pval = T,
-                          censor=F,conf.int = T,palette = 'jco',title='Cardiomiopathy/heart failure',xlab='Time/months')
+# heart failure
+surv_object <- Surv(time = floor(a1[a1_hf,]$heart_failure_grp_rec_fu/30), 
+                    event = a1[a1_hf,]$heart_failure_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_hf,])
+splots[[3]] <- ggsurvplot(fit1, data = a1[a1_hf,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Heart failure',xlab='Time/months')
 
-# 3 cvd combined
-surv_object <- Surv(time = floor(a1$cvdcombo_grp_rec_fu/30), 
-                    event = a1$cvdcombo_grp_rec)
-fit1 <- survfit(surv_object ~ group, data = a1)
-splots[[4]] <- ggsurvplot(fit1, data = a1,fun = "event", size=1, risk.table = T,pval = T,
-                          censor=F,conf.int = T,palette = 'jco',title='Any of the 3 outcomes',xlab='Time/months')
+# cardiomyopathy
+surv_object <- Surv(time = floor(a1[a1_cm,]$cardiomyopathy_grp_rec_fu/30), 
+                    event = a1[a1_cm,]$cardiomyopathy_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_cm,])
+splots[[4]] <- ggsurvplot(fit1, data = a1[a1_cm,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Cardiomyopathy',xlab='Time/months')
 
-fig2 <- arrange_ggsurvplots(splots,ncol = 2, nrow = 2, risk.table.height = 0.2)
-ggsave("fig2.png", fig2,width = 13.5, height = 12)
+# 4 cvd combined
+surv_object <- Surv(time = floor(a1[a1_combo,]$cvdcombo_grp_rec_fu/30), 
+                    event = a1[a1_combo,]$cvdcombo_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_combo,])
+splots[[5]] <- ggsurvplot(fit1, data = a1[a1_combo,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Any of the 4 outcomes',xlab='Time/months')
 
+fig2 <- arrange_ggsurvplots(splots,ncol = 2, nrow = 3, risk.table.height = 0.25)
+ggsave("fig2.png", fig2,width = 13, height = 18)
 
 
 
@@ -284,63 +407,77 @@ fit1 <- survfit(surv_object ~ group, data = a1[a1_ihd_chemo,])
 splots[[1]] <- ggsurvplot(fit1, data = a1[a1_ihd_chemo,],fun = "event", size=1, risk.table = T,pval = T,
                           censor=F,conf.int = T,palette = 'jco',title='Ischemic heart disease',xlab='Time/months')
 
-# stroke/tia
-surv_object <- Surv(time = floor(a1[a1_stroke_chemo,]$stroke_tia_grp_inc_fu/30), 
-                    event = a1[a1_stroke_chemo,]$stroke_tia_grp_inc)
+# stroke
+surv_object <- Surv(time = floor(a1[a1_stroke_chemo,]$stroke_grp_inc_fu/30), 
+                    event = a1[a1_stroke_chemo,]$stroke_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1[a1_stroke_chemo,])
 splots[[2]] <- ggsurvplot(fit1, data = a1[a1_stroke_chemo,],fun = "event", size=1, risk.table = T,pval = T,
-                          censor=F,conf.int = T,palette = 'jco',title='Stroke/TIA',xlab='Time/months')
+                          censor=F,conf.int = T,palette = 'jco',title='Stroke',xlab='Time/months')
 
-# cardiomyopathy/heart failure
-surv_object <- Surv(time = floor(a1[a1_chf_chemo,]$cardiomyopathy_heart_failure_grp_inc_fu/30), 
-                    event = a1[a1_chf_chemo,]$cardiomyopathy_heart_failure_grp_inc)
-fit1 <- survfit(surv_object ~ group, data = a1[a1_chf_chemo,])
-splots[[3]] <- ggsurvplot(fit1, data = a1[a1_chf_chemo,],fun = "event", size=1, risk.table = T,pval = T,
-                          censor=F,conf.int = T,palette = 'jco',title='Cardiomiopathy/heart failure',xlab='Time/months')
+# heart failure
+surv_object <- Surv(time = floor(a1[a1_hf_chemo,]$heart_failure_grp_inc_fu/30), 
+                    event = a1[a1_hf_chemo,]$heart_failure_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_hf_chemo,])
+splots[[3]] <- ggsurvplot(fit1, data = a1[a1_hf_chemo,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Heart failure',xlab='Time/months')
 
-# 3 cvd combined
+# cardiomyopathy
+surv_object <- Surv(time = floor(a1[a1_cm_chemo,]$cardiomyopathy_grp_inc_fu/30), 
+                    event = a1[a1_cm_chemo,]$cardiomyopathy_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_cm_chemo,])
+splots[[4]] <- ggsurvplot(fit1, data = a1[a1_cm_chemo,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Cardiomyopathy',xlab='Time/months')
+
+# 4 cvd combined
 surv_object <- Surv(time = floor(a1[a1_combo_chemo,]$cvdcombo_grp_inc_fu/30), 
                     event = a1[a1_combo_chemo,]$cvdcombo_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1[a1_combo_chemo,])
-splots[[4]] <- ggsurvplot(fit1, data = a1[a1_combo_chemo,],fun = "event", size=1, risk.table = T,pval = T,
-                          censor=F,conf.int = T,palette = 'jco',title='Any of the 3 outcomes',xlab='Time/months')
+splots[[5]] <- ggsurvplot(fit1, data = a1[a1_combo_chemo,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Any of the 4 outcomes',xlab='Time/months')
 
-fig3 <- arrange_ggsurvplots(splots,ncol = 2, nrow = 2, risk.table.height = 0.2)
-ggsave("fig3.png", fig3,width = 13.5, height = 12)
+fig3 <- arrange_ggsurvplots(splots,ncol = 2, nrow = 3, risk.table.height = 0.25)
+ggsave("fig3.png", fig3,width = 13, height = 18)
 
 
 # any new onset=true incidence+recurrence
 splots <- list()
 # ischemic heart disease
-surv_object <- Surv(time = floor(a1[a1_chemo,]$ischemic_heart_disease_grp_rec_fu/30), 
-                    event = a1[a1_chemo,]$ischemic_heart_disease_grp_rec)
-fit1 <- survfit(surv_object ~ group, data = a1[a1_chemo,])
-splots[[1]] <- ggsurvplot(fit1, data = a1[a1_chemo,],fun = "event", size=1, risk.table = T,pval = T,
+surv_object <- Surv(time = floor(a1[a1_ihd_chemo,]$ischemic_heart_disease_grp_rec_fu/30), 
+                    event = a1[a1_ihd_chemo,]$ischemic_heart_disease_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_ihd_chemo,])
+splots[[1]] <- ggsurvplot(fit1, data = a1[a1_ihd_chemo,],fun = "event", size=1, risk.table = T,pval = T,
                           censor=F,conf.int = T,palette = 'jco',title='Ischemic heart disease',xlab='Time/months')
 
-# stroke/tia
-surv_object <- Surv(time = floor(a1[a1_chemo,]$stroke_tia_grp_rec_fu/30), 
-                    event = a1[a1_chemo,]$stroke_tia_grp_rec)
-fit1 <- survfit(surv_object ~ group, data = a1[a1_chemo,])
-splots[[2]] <- ggsurvplot(fit1, data = a1[a1_chemo,],fun = "event", size=1, risk.table = T,pval = T,
-                          censor=F,conf.int = T,palette = 'jco',title='Stroke/TIA',xlab='Time/months')
+# stroke
+surv_object <- Surv(time = floor(a1[a1_stroke_chemo,]$stroke_grp_rec_fu/30), 
+                    event = a1[a1_stroke_chemo,]$stroke_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_stroke_chemo,])
+splots[[2]] <- ggsurvplot(fit1, data = a1[a1_stroke_chemo,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Stroke',xlab='Time/months')
 
-# cardiomyopathy/heart failure
-surv_object <- Surv(time = floor(a1[a1_chemo,]$cardiomyopathy_heart_failure_grp_rec_fu/30), 
-                    event = a1[a1_chemo,]$cardiomyopathy_heart_failure_grp_rec)
-fit1 <- survfit(surv_object ~ group, data = a1[a1_chemo,])
-splots[[3]] <- ggsurvplot(fit1, data = a1[a1_chemo,],fun = "event", size=1, risk.table = T,pval = T,
-                          censor=F,conf.int = T,palette = 'jco',title='Cardiomiopathy/heart failure',xlab='Time/months')
+# heart failure
+surv_object <- Surv(time = floor(a1[a1_hf_chemo,]$heart_failure_grp_rec_fu/30), 
+                    event = a1[a1_hf_chemo,]$heart_failure_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_hf_chemo,])
+splots[[3]] <- ggsurvplot(fit1, data = a1[a1_hf_chemo,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Heart failure',xlab='Time/months')
 
-# 3 cvd combined
-surv_object <- Surv(time = floor(a1[a1_chemo,]$cvdcombo_grp_rec_fu/30), 
-                    event = a1[a1_chemo,]$cvdcombo_grp_rec)
-fit1 <- survfit(surv_object ~ group, data = a1[a1_chemo,])
-splots[[4]] <- ggsurvplot(fit1, data = a1[a1_chemo,],fun = "event", size=1, risk.table = T,pval = T,
-                          censor=F,conf.int = T,palette = 'jco',title='Any of the 3 outcomes',xlab='Time/months')
+# cardiomyopathy
+surv_object <- Surv(time = floor(a1[a1_cm_chemo,]$cardiomyopathy_grp_rec_fu/30), 
+                    event = a1[a1_cm_chemo,]$cardiomyopathy_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_cm_chemo,])
+splots[[4]] <- ggsurvplot(fit1, data = a1[a1_cm_chemo,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Cardiomyopathy',xlab='Time/months')
 
-fig4 <- arrange_ggsurvplots(splots,ncol = 2, nrow = 2, risk.table.height = 0.2)
-ggsave("fig4.png", fig4,width = 13.5, height = 12)
+# 4 cvd combined
+surv_object <- Surv(time = floor(a1[a1_combo_chemo,]$cvdcombo_grp_rec_fu/30), 
+                    event = a1[a1_combo_chemo,]$cvdcombo_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_combo_chemo,])
+splots[[5]] <- ggsurvplot(fit1, data = a1[a1_combo_chemo,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Any of the 4 outcomes',xlab='Time/months')
+
+fig4 <- arrange_ggsurvplots(splots,ncol = 2, nrow = 3, risk.table.height = 0.25)
+ggsave("fig4.png", fig4,width = 13, height = 18)
 
 
 
@@ -358,63 +495,77 @@ fit1 <- survfit(surv_object ~ group, data = a1[a1_ihd_horm,])
 splots[[1]] <- ggsurvplot(fit1, data = a1[a1_ihd_horm,],fun = "event", size=1, risk.table = T,pval = T,
                           censor=F,conf.int = T,palette = 'jco',title='Ischemic heart disease',xlab='Time/months')
 
-# stroke/tia
-surv_object <- Surv(time = floor(a1[a1_stroke_horm,]$stroke_tia_grp_inc_fu/30), 
-                    event = a1[a1_stroke_horm,]$stroke_tia_grp_inc)
+# stroke
+surv_object <- Surv(time = floor(a1[a1_stroke_horm,]$stroke_grp_inc_fu/30), 
+                    event = a1[a1_stroke_horm,]$stroke_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1[a1_stroke_horm,])
 splots[[2]] <- ggsurvplot(fit1, data = a1[a1_stroke_horm,],fun = "event", size=1, risk.table = T,pval = T,
-                          censor=F,conf.int = T,palette = 'jco',title='Stroke/TIA',xlab='Time/months')
+                          censor=F,conf.int = T,palette = 'jco',title='Stroke',xlab='Time/months')
 
-# cardiomyopathy/heart failure
-surv_object <- Surv(time = floor(a1[a1_chf_horm,]$cardiomyopathy_heart_failure_grp_inc_fu/30), 
-                    event = a1[a1_chf_horm,]$cardiomyopathy_heart_failure_grp_inc)
-fit1 <- survfit(surv_object ~ group, data = a1[a1_chf_horm,])
-splots[[3]] <- ggsurvplot(fit1, data = a1[a1_chf_horm,],fun = "event", size=1, risk.table = T,pval = T,
-                          censor=F,conf.int = T,palette = 'jco',title='Cardiomiopathy/heart failure',xlab='Time/months')
+# heart failure
+surv_object <- Surv(time = floor(a1[a1_hf_horm,]$heart_failure_grp_inc_fu/30), 
+                    event = a1[a1_hf_horm,]$heart_failure_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_hf_horm,])
+splots[[3]] <- ggsurvplot(fit1, data = a1[a1_hf_horm,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Heart failure',xlab='Time/months')
 
-# 3 cvd combined
+# cardiomyopathy
+surv_object <- Surv(time = floor(a1[a1_cm_horm,]$cardiomyopathy_grp_inc_fu/30), 
+                    event = a1[a1_cm_horm,]$cardiomyopathy_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_cm_horm,])
+splots[[4]] <- ggsurvplot(fit1, data = a1[a1_cm_horm,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Cardiomyopathy',xlab='Time/months')
+
+# 4 cvd combined
 surv_object <- Surv(time = floor(a1[a1_combo_horm,]$cvdcombo_grp_inc_fu/30), 
                     event = a1[a1_combo_horm,]$cvdcombo_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1[a1_combo_horm,])
-splots[[4]] <- ggsurvplot(fit1, data = a1[a1_combo_horm,],fun = "event", size=1, risk.table = T,pval = T,
-                          censor=F,conf.int = T,palette = 'jco',title='Any of the 3 outcomes',xlab='Time/months')
+splots[[5]] <- ggsurvplot(fit1, data = a1[a1_combo_horm,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Any of the 4 outcomes',xlab='Time/months')
 
-fig5 <- arrange_ggsurvplots(splots,ncol = 2, nrow = 2, risk.table.height = 0.2)
-ggsave("fig5.png", fig5,width = 13.5, height = 12)
+fig5 <- arrange_ggsurvplots(splots,ncol = 2, nrow = 3, risk.table.height = 0.25)
+ggsave("fig5.png", fig5, width = 13, height = 18)
 
 
 # any new onset=true incidence+recurrence
 splots <- list()
 # ischemic heart disease
-surv_object <- Surv(time = floor(a1[a1_horm,]$ischemic_heart_disease_grp_rec_fu/30), 
-                    event = a1[a1_horm,]$ischemic_heart_disease_grp_rec)
-fit1 <- survfit(surv_object ~ group, data = a1[a1_horm,])
-splots[[1]] <- ggsurvplot(fit1, data = a1[a1_horm,],fun = "event", size=1, risk.table = T,pval = T,
+surv_object <- Surv(time = floor(a1[a1_ihd_horm,]$ischemic_heart_disease_grp_rec_fu/30), 
+                    event = a1[a1_ihd_horm,]$ischemic_heart_disease_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_ihd_horm,])
+splots[[1]] <- ggsurvplot(fit1, data = a1[a1_ihd_horm,],fun = "event", size=1, risk.table = T,pval = T,
                           censor=F,conf.int = T,palette = 'jco',title='Ischemic heart disease',xlab='Time/months')
 
-# stroke/tia
-surv_object <- Surv(time = floor(a1[a1_horm,]$stroke_tia_grp_rec_fu/30), 
-                    event = a1[a1_horm,]$stroke_tia_grp_rec)
-fit1 <- survfit(surv_object ~ group, data = a1[a1_horm,])
-splots[[2]] <- ggsurvplot(fit1, data = a1[a1_horm,],fun = "event", size=1, risk.table = T,pval = T,
-                          censor=F,conf.int = T,palette = 'jco',title='Stroke/TIA',xlab='Time/months')
+# stroke
+surv_object <- Surv(time = floor(a1[a1_stroke_horm,]$stroke_grp_rec_fu/30), 
+                    event = a1[a1_stroke_horm,]$stroke_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_stroke_horm,])
+splots[[2]] <- ggsurvplot(fit1, data = a1[a1_stroke_horm,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Stroke',xlab='Time/months')
 
-# cardiomyopathy/heart failure
-surv_object <- Surv(time = floor(a1[a1_horm,]$cardiomyopathy_heart_failure_grp_rec_fu/30), 
-                    event = a1[a1_horm,]$cardiomyopathy_heart_failure_grp_rec)
-fit1 <- survfit(surv_object ~ group, data = a1[a1_horm,])
-splots[[3]] <- ggsurvplot(fit1, data = a1[a1_horm,],fun = "event", size=1, risk.table = T,pval = T,
-                          censor=F,conf.int = T,palette = 'jco',title='Cardiomiopathy/heart failure',xlab='Time/months')
+# heart failure
+surv_object <- Surv(time = floor(a1[a1_hf_horm,]$heart_failure_grp_rec_fu/30), 
+                    event = a1[a1_hf_horm,]$heart_failure_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_hf_horm,])
+splots[[3]] <- ggsurvplot(fit1, data = a1[a1_hf_horm,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Heart failure',xlab='Time/months')
 
-# 3 cvd combined
-surv_object <- Surv(time = floor(a1[a1_horm,]$cvdcombo_grp_rec_fu/30), 
-                    event = a1[a1_horm,]$cvdcombo_grp_rec)
-fit1 <- survfit(surv_object ~ group, data = a1[a1_horm,])
-splots[[4]] <- ggsurvplot(fit1, data = a1[a1_horm,],fun = "event", size=1, risk.table = T,pval = T,
-                          censor=F,conf.int = T,palette = 'jco',title='Any of the 3 outcomes',xlab='Time/months')
+# cardiomyopathy
+surv_object <- Surv(time = floor(a1[a1_cm_horm,]$cardiomyopathy_grp_rec_fu/30), 
+                    event = a1[a1_cm_horm,]$cardiomyopathy_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_cm_horm,])
+splots[[4]] <- ggsurvplot(fit1, data = a1[a1_cm_horm,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Cardiomyopathy',xlab='Time/months')
 
-fig6 <- arrange_ggsurvplots(splots,ncol = 2, nrow = 2, risk.table.height = 0.2)
-ggsave("fig6.png", fig6,width = 13.5, height = 12)
+# 4 cvd combined
+surv_object <- Surv(time = floor(a1[a1_combo_horm,]$cvdcombo_grp_rec_fu/30), 
+                    event = a1[a1_combo_horm,]$cvdcombo_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_combo_horm,])
+splots[[5]] <- ggsurvplot(fit1, data = a1[a1_combo_horm,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Any of the 4 outcomes',xlab='Time/months')
+
+fig6 <- arrange_ggsurvplots(splots,ncol = 2, nrow = 3, risk.table.height = 0.25)
+ggsave("fig6.png", fig6, width = 13, height = 18)
 
 
 
@@ -432,64 +583,115 @@ fit1 <- survfit(surv_object ~ group, data = a1[a1_ihd_rad,])
 splots[[1]] <- ggsurvplot(fit1, data = a1[a1_ihd_rad,],fun = "event", size=1, risk.table = T,pval = T,
                           censor=F,conf.int = T,palette = 'jco',title='Ischemic heart disease',xlab='Time/months')
 
-# stroke/tia
-surv_object <- Surv(time = floor(a1[a1_stroke_rad,]$stroke_tia_grp_inc_fu/30), 
-                    event = a1[a1_stroke_rad,]$stroke_tia_grp_inc)
+# stroke
+surv_object <- Surv(time = floor(a1[a1_stroke_rad,]$stroke_grp_inc_fu/30), 
+                    event = a1[a1_stroke_rad,]$stroke_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1[a1_stroke_rad,])
 splots[[2]] <- ggsurvplot(fit1, data = a1[a1_stroke_rad,],fun = "event", size=1, risk.table = T,pval = T,
-                          censor=F,conf.int = T,palette = 'jco',title='Stroke/TIA',xlab='Time/months')
+                          censor=F,conf.int = T,palette = 'jco',title='Stroke',xlab='Time/months')
 
-# cardiomyopathy/heart failure
-surv_object <- Surv(time = floor(a1[a1_chf_rad,]$cardiomyopathy_heart_failure_grp_inc_fu/30), 
-                    event = a1[a1_chf_rad,]$cardiomyopathy_heart_failure_grp_inc)
-fit1 <- survfit(surv_object ~ group, data = a1[a1_chf_rad,])
-splots[[3]] <- ggsurvplot(fit1, data = a1[a1_chf_rad,],fun = "event", size=1, risk.table = T,pval = T,
-                          censor=F,conf.int = T,palette = 'jco',title='Cardiomiopathy/heart failure',xlab='Time/months')
+# heart failure
+surv_object <- Surv(time = floor(a1[a1_hf_rad,]$heart_failure_grp_inc_fu/30), 
+                    event = a1[a1_hf_rad,]$heart_failure_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_hf_rad,])
+splots[[3]] <- ggsurvplot(fit1, data = a1[a1_hf_rad,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Heart failure',xlab='Time/months')
 
-# 3 cvd combined
+# cardiomyopathy
+surv_object <- Surv(time = floor(a1[a1_cm_rad,]$cardiomyopathy_grp_inc_fu/30), 
+                    event = a1[a1_cm_rad,]$cardiomyopathy_grp_inc)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_cm_rad,])
+splots[[4]] <- ggsurvplot(fit1, data = a1[a1_cm_rad,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Cardiomyopathy',xlab='Time/months')
+
+# 4 cvd combined
 surv_object <- Surv(time = floor(a1[a1_combo_rad,]$cvdcombo_grp_inc_fu/30), 
                     event = a1[a1_combo_rad,]$cvdcombo_grp_inc)
 fit1 <- survfit(surv_object ~ group, data = a1[a1_combo_rad,])
-splots[[4]] <- ggsurvplot(fit1, data = a1[a1_combo_rad,],fun = "event", size=1, risk.table = T,pval = T,
-                          censor=F,conf.int = T,palette = 'jco',title='Any of the 3 outcomes',xlab='Time/months')
+splots[[5]] <- ggsurvplot(fit1, data = a1[a1_combo_rad,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Any of the 4 outcomes',xlab='Time/months')
 
-fig7 <- arrange_ggsurvplots(splots,ncol = 2, nrow = 2, risk.table.height = 0.2)
-ggsave("fig7.png", fig7,width = 13.5, height = 12)
+fig7 <- arrange_ggsurvplots(splots,ncol = 2, nrow = 3, risk.table.height = 0.25)
+ggsave("fig7.png", fig7, width = 13, height = 18)
 
 
 # any new onset=true incidence+recurrence
 splots <- list()
 # ischemic heart disease
-surv_object <- Surv(time = floor(a1[a1_rad,]$ischemic_heart_disease_grp_rec_fu/30), 
-                    event = a1[a1_rad,]$ischemic_heart_disease_grp_rec)
-fit1 <- survfit(surv_object ~ group, data = a1[a1_rad,])
-splots[[1]] <- ggsurvplot(fit1, data = a1[a1_rad,],fun = "event", size=1, risk.table = T,pval = T,
+surv_object <- Surv(time = floor(a1[a1_ihd_rad,]$ischemic_heart_disease_grp_rec_fu/30), 
+                    event = a1[a1_ihd_rad,]$ischemic_heart_disease_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_ihd_rad,])
+splots[[1]] <- ggsurvplot(fit1, data = a1[a1_ihd_rad,],fun = "event", size=1, risk.table = T,pval = T,
                           censor=F,conf.int = T,palette = 'jco',title='Ischemic heart disease',xlab='Time/months')
 
-# stroke/tia
-surv_object <- Surv(time = floor(a1[a1_rad,]$stroke_tia_grp_rec_fu/30), 
-                    event = a1[a1_rad,]$stroke_tia_grp_rec)
-fit1 <- survfit(surv_object ~ group, data = a1[a1_rad,])
-splots[[2]] <- ggsurvplot(fit1, data = a1[a1_rad,],fun = "event", size=1, risk.table = T,pval = T,
-                          censor=F,conf.int = T,palette = 'jco',title='Stroke/TIA',xlab='Time/months')
+# stroke
+surv_object <- Surv(time = floor(a1[a1_stroke_rad,]$stroke_grp_rec_fu/30), 
+                    event = a1[a1_stroke_rad,]$stroke_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_stroke_rad,])
+splots[[2]] <- ggsurvplot(fit1, data = a1[a1_stroke_rad,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Stroke',xlab='Time/months')
 
-# cardiomyopathy/heart failure
-surv_object <- Surv(time = floor(a1[a1_rad,]$cardiomyopathy_heart_failure_grp_rec_fu/30), 
-                    event = a1[a1_rad,]$cardiomyopathy_heart_failure_grp_rec)
-fit1 <- survfit(surv_object ~ group, data = a1[a1_rad,])
-splots[[3]] <- ggsurvplot(fit1, data = a1[a1_rad,],fun = "event", size=1, risk.table = T,pval = T,
-                          censor=F,conf.int = T,palette = 'jco',title='Cardiomiopathy/heart failure',xlab='Time/months')
+# heart failure
+surv_object <- Surv(time = floor(a1[a1_hf_rad,]$heart_failure_grp_rec_fu/30), 
+                    event = a1[a1_hf_rad,]$heart_failure_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_hf_rad,])
+splots[[3]] <- ggsurvplot(fit1, data = a1[a1_hf_rad,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Heart failure',xlab='Time/months')
 
-# 3 cvd combined
-surv_object <- Surv(time = floor(a1[a1_rad,]$cvdcombo_grp_rec_fu/30), 
-                    event = a1[a1_rad,]$cvdcombo_grp_rec)
-fit1 <- survfit(surv_object ~ group, data = a1[a1_rad,])
-splots[[4]] <- ggsurvplot(fit1, data = a1[a1_rad,],fun = "event", size=1, risk.table = T,pval = T,
-                          censor=F,conf.int = T,palette = 'jco',title='Any of the 3 outcomes',xlab='Time/months')
+# cardiomyopathy
+surv_object <- Surv(time = floor(a1[a1_cm_rad,]$cardiomyopathy_grp_rec_fu/30), 
+                    event = a1[a1_cm_rad,]$cardiomyopathy_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_cm_rad,])
+splots[[4]] <- ggsurvplot(fit1, data = a1[a1_cm_rad,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Cardiomyopathy',xlab='Time/months')
 
-fig8 <- arrange_ggsurvplots(splots,ncol = 2, nrow = 2, risk.table.height = 0.2)
-ggsave("fig8.png", fig8,width = 13.5, height = 12)
+# 4 cvd combined
+surv_object <- Surv(time = floor(a1[a1_combo_rad,]$cvdcombo_grp_rec_fu/30), 
+                    event = a1[a1_combo_rad,]$cvdcombo_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_combo_rad,])
+splots[[5]] <- ggsurvplot(fit1, data = a1[a1_combo_rad,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Any of the 4 outcomes',xlab='Time/months')
 
+fig8 <- arrange_ggsurvplots(splots,ncol = 2, nrow = 3, risk.table.height = 0.25)
+ggsave("fig8.png", fig8, width = 13, height = 18)
+
+
+
+
+################################################################################
+# KM plot of incident CVD rf
+
+splots <- list()
+# Diabetes
+surv_object <- Surv(time = floor(a1[a1_ihd,]$cvdrf_diab_fu/30), 
+                    event = a1[a1_ihd,]$cvdrf_diab)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_ihd,])
+splots[[1]] <- ggsurvplot(fit1, data = a1[a1_ihd,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Ischemic heart disease',xlab='Time/months')
+
+# Hypertension
+surv_object <- Surv(time = floor(a1[a1_stroke,]$stroke_grp_rec_fu/30), 
+                    event = a1[a1_stroke,]$stroke_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_stroke,])
+splots[[2]] <- ggsurvplot(fit1, data = a1[a1_stroke,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Stroke',xlab='Time/months')
+
+# Dyslipidemia
+surv_object <- Surv(time = floor(a1[a1_hf,]$heart_failure_grp_rec_fu/30), 
+                    event = a1[a1_hf,]$heart_failure_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_hf,])
+splots[[3]] <- ggsurvplot(fit1, data = a1[a1_hf,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Heart failure',xlab='Time/months')
+
+# 4 cvd combined
+surv_object <- Surv(time = floor(a1[a1_combo,]$cvdcombo_grp_rec_fu/30), 
+                    event = a1[a1_combo,]$cvdcombo_grp_rec)
+fit1 <- survfit(surv_object ~ group, data = a1[a1_combo,])
+splots[[5]] <- ggsurvplot(fit1, data = a1[a1_combo,],fun = "event", size=1, risk.table = T,pval = T,
+                          censor=F,conf.int = T,palette = 'jco',title='Any of the 4 outcomes',xlab='Time/months')
+
+fig2 <- arrange_ggsurvplots(splots,ncol = 2, nrow = 3, risk.table.height = 0.25)
+ggsave("fig2.png", fig2,width = 13, height = 18)
 
 
 
@@ -506,9 +708,8 @@ coxtab <- function(d,x,covar){
   covars <- paste(covar, collapse = '+')
   surv_object <- Surv(time = floor(d[,paste0(x,'_fu')]/30), event = d[,x])
   fit.coxph1 <- coxph(surv_object ~ group1, data = d)
-  fit.coxph2 <- eval(parse(text=(paste0("coxph(surv_object ~ group1+bmicat1+menop+parity+
-                        diab+systolic_2+diastolic_2+glu_f_q+medhousincome_q+edu1_q+",
-                                        covars,", data = d)"))))
+  fit.coxph2 <- eval(parse(text=(paste0("coxph(surv_object ~ group1+bmicat1+menop+
+                        diab_bl+htn_bl+dyslipid_bl+medhousincome_q+edu1_q+",covars,", data = d)"))))
   sum1 <- c(summary(fit.coxph1)$coef[c(2,5)],summary(fit.coxph1)$conf.int[3:4])
   sum2 <- cbind(summary(fit.coxph2)$coef[,c(2,5)],summary(fit.coxph2)$conf.int[,3:4])
   sum3 <- rbind(sum1, sum2)[,c(1,3,4,2)]
@@ -518,25 +719,27 @@ coxtab <- function(d,x,covar){
 }
 
 # list of prevalent cvd
-prevcvd <-c("arrhythmia_grp_prev","cardiomyopathy_heart_failure_grp_prev",
+prevcvd <- c("arrhythmia_grp_prev","cardiomyopathy_grp_prev","heart_failure_grp_prev",
             "ischemic_heart_disease_grp_prev","myocarditis_pericarditis_grp_prev",    
-            "stroke_tia_grp_prev","valvular_disease_grp_prev","venous_thromboembolic_disease_grp_prev")
+            "stroke_grp_prev","tia_grp_prev","valvular_disease_grp_prev","venous_thromboembolic_disease_grp_prev")
 
 ###
 # run models in CASES and CONTROL 1
 # Pure incidence
-cox_isch <- coxtab(a1[a1_ihd,],'ischemic_heart_disease_grp_inc',prevcvd[-3])
-cox_stroke <- coxtab(a1[a1_stroke,],'stroke_tia_grp_inc',prevcvd[-5])
-cox_chf <- coxtab(a1[a1_chf,],'cardiomyopathy_heart_failure_grp_inc',prevcvd[-2])
-cox_cvdcombo <- coxtab(a1[a1_combo,],'cvdcombo_grp_inc',prevcvd[c(-2,-3,-5)])
-cox1 <- Reduce(function(...) merge(...,by='var', all=T),
-               list(cox_isch, cox_stroke, cox_chf, cox_cvdcombo))
-cox1[,-1] <- lapply(cox1[,-1], as.character)
-cox1 <- rbind(cox1[1,],'',cox1[2,],'',cox1[3:7,],cox1[8,],'',cox1[9:11,],cox1[12,],'',
-              cox1[13:14,],'',cox1[15:16,],'',cox1[17:20,],'',cox1[21:24,],'',
-              cox1[25:27,],'',cox1[28:34,])
-
-cox1 <- cbind(cox1[,1:5],'',cox1[,6:9],'',cox1[,10:13],'',cox1[,14:17])
+cox_isch <- coxtab(a1[a1_ihd,],'ischemic_heart_disease_grp_inc',prevcvd[-4])
+cox_stroke <- coxtab(a1[a1_stroke,],'stroke_grp_inc',prevcvd[-6])
+cox_hf <- coxtab(a1[a1_hf,],'heart_failure_grp_inc',prevcvd[-3])
+cox_cm <- coxtab(a1[a1_cm,],'cardiomyopathy_grp_inc',prevcvd[-2])
+cox_cvdcombo <- coxtab(a1[a1_combo,],'cvdcombo_grp_inc',prevcvd[c(-2,-3,-4,-6)])
+cox_diab <- coxtab(a1[a1_diab,],'cvdrf_diab',prevcvd)
+cox_htn <- coxtab(a1[a1_htn,],'cvdrf_htn',prevcvd)
+cox_dyslipid <- coxtab(a1[a1_dyslipid,],'cvdrf_dyslipid',prevcvd)
+cox_rfcombo <- coxtab(a1[a1_rfcombo,],'cvdrfcombo',prevcvd)
+cox1 <- rbind(cox_isch[1:2,],cox_hf[1:2,], cox_cm[1:2,], cox_stroke[1:2,], 
+              cox_cvdcombo[1:2,],cox_htn[1:2,],cox_diab[1:2,],cox_dyslipid[1:2,],
+              cox_rfcombo[1:2,])
+cox1[,-1] <- lapply(cox1[,-1], function(x) as.numeric(as.character(x)))
+cox1 <- cbind(round2(cox1[,2],2),paste0("(",round2(cox1[,3],2),", ", round2(cox1[,4],2),")"))
 
 # Any new onset
 cox_isch <- coxtab(a1,'ischemic_heart_disease_grp_rec',prevcvd)
@@ -605,17 +808,20 @@ write_csv(a2_cox1rec,'cox_cntrl2_newonset.csv')
 ###
 # chemo cases
 # Pure incidence
-cox_isch <- coxtab(a1[a1_ihd_chemo,],'ischemic_heart_disease_grp_inc',prevcvd[-3])
-cox_stroke <- coxtab(a1[a1_stroke_chemo,],'stroke_tia_grp_inc',prevcvd[-5])
-cox_chf <- coxtab(a1[a1_chf_chemo,],'cardiomyopathy_heart_failure_grp_inc',prevcvd[-2])
-cox_cvdcombo <- coxtab(a1[a1_combo_chemo,],'cvdcombo_grp_inc',prevcvd[c(-2,-3,-5)])
-cox2 <- Reduce(function(...) merge(...,by='var', all=T),
-               list(cox_isch, cox_stroke, cox_chf, cox_cvdcombo))
-cox2[,-1] <- lapply(cox2[,-1], as.character)
-cox2 <- rbind(cox2[1,],'',cox2[2,],'',cox2[3:7,],cox2[8,],'',cox2[9:11,],cox2[12,],'',
-              cox2[13:14,],'',cox2[15:16,],'',cox2[17:20,],'',cox2[21:24,],'',
-              cox2[25:27,],'',cox2[28:34,])
-cox2 <- cbind(cox2[,1:5],'',cox2[,6:9],'',cox2[,10:13],'',cox2[,14:17])
+cox_isch <- coxtab(a1[a1_ihd_chemo,],'ischemic_heart_disease_grp_inc',prevcvd[-4])
+cox_stroke <- coxtab(a1[a1_stroke_chemo,],'stroke_grp_inc',prevcvd[-6])
+cox_hf <- coxtab(a1[a1_hf_chemo,],'heart_failure_grp_inc',prevcvd[-3])
+cox_cm <- coxtab(a1[a1_cm_chemo,],'cardiomyopathy_grp_inc',prevcvd[-2])
+cox_cvdcombo <- coxtab(a1[a1_combo_chemo,],'cvdcombo_grp_inc',prevcvd[c(-2,-3,-4,-6)])
+cox_diab <- coxtab(a1[a1_diab_chemo,],'cvdrf_diab',prevcvd)
+cox_htn <- coxtab(a1[a1_htn_chemo,],'cvdrf_htn',prevcvd)
+cox_dyslipid <- coxtab(a1[a1_dyslipid_chemo,],'cvdrf_dyslipid',prevcvd)
+cox_rfcombo <- coxtab(a1[a1_rfcombo_chemo,],'cvdrfcombo',prevcvd)
+cox2 <- rbind(cox_isch[1:2,],cox_hf[1:2,], cox_cm[1:2,], cox_stroke[1:2,], 
+              cox_cvdcombo[1:2,],cox_htn[1:2,],cox_diab[1:2,],cox_dyslipid[1:2,],
+              cox_rfcombo[1:2,])
+cox2[,-1] <- lapply(cox2[,-1], function(x) as.numeric(as.character(x)))
+cox2 <- cbind(round2(cox2[,2],2),paste0("(",round2(cox2[,3],2),", (", round2(cox2[,4],2),")"))
 
 # Any new onset
 cox_isch <- coxtab(a1[a1_chemo,],'ischemic_heart_disease_grp_rec',prevcvd)
@@ -636,17 +842,20 @@ cox2rec <- cbind(cox2rec[,1:5],'',cox2rec[,6:9],'',cox2rec[,10:13],'',cox2rec[,1
 
 # horm
 # Pure incidence
-cox_isch <- coxtab(a1[a1_ihd_horm,],'ischemic_heart_disease_grp_inc',prevcvd[-3])
-cox_stroke <- coxtab(a1[a1_stroke_horm,],'stroke_tia_grp_inc',prevcvd[-5])
-cox_chf <- coxtab(a1[a1_chf_horm,],'cardiomyopathy_heart_failure_grp_inc',prevcvd[-2])
-cox_cvdcombo <- coxtab(a1[a1_combo_horm,],'cvdcombo_grp_inc',prevcvd[c(-2,-3,-5)])
-cox3 <- Reduce(function(...) merge(...,by='var', all=T),
-               list(cox_isch, cox_stroke, cox_chf, cox_cvdcombo))
-cox3[,-1] <- lapply(cox3[,-1], as.character)
-cox3 <- rbind(cox3[1,],'',cox3[2,],'',cox3[3:7,],cox3[8,],'',cox3[9:11,],cox3[12,],'',
-              cox3[13:14,],'',cox3[15:16,],'',cox3[17:20,],'',cox3[21:24,],'',
-              cox3[25:27,],'',cox3[28:34,])
-cox3 <- cbind(cox3[,1:5],'',cox3[,6:9],'',cox3[,10:13],'',cox3[,14:17])
+cox_isch <- coxtab(a1[a1_ihd_horm,],'ischemic_heart_disease_grp_inc',prevcvd[-4])
+cox_stroke <- coxtab(a1[a1_stroke_horm,],'stroke_grp_inc',prevcvd[-6])
+cox_hf <- coxtab(a1[a1_hf_horm,],'heart_failure_grp_inc',prevcvd[-3])
+cox_cm <- coxtab(a1[a1_cm_horm,],'cardiomyopathy_grp_inc',prevcvd[-2])
+cox_cvdcombo <- coxtab(a1[a1_combo_horm,],'cvdcombo_grp_inc',prevcvd[c(-2,-3,-4,-6)])
+cox_diab <- coxtab(a1[a1_diab_horm,],'cvdrf_diab',prevcvd)
+cox_htn <- coxtab(a1[a1_htn_horm,],'cvdrf_htn',prevcvd)
+cox_dyslipid <- coxtab(a1[a1_dyslipid_horm,],'cvdrf_dyslipid',prevcvd)
+cox_rfcombo <- coxtab(a1[a1_rfcombo_horm,],'cvdrfcombo',prevcvd)
+cox3 <- rbind(cox_isch[1:2,],cox_hf[1:2,], cox_cm[1:2,], cox_stroke[1:2,], 
+              cox_cvdcombo[1:2,],cox_htn[1:2,],cox_diab[1:2,],cox_dyslipid[1:2,],
+              cox_rfcombo[1:2,])
+cox3[,-1] <- lapply(cox3[,-1], function(x) as.numeric(as.character(x)))
+cox3 <- cbind(round2(cox3[,2],2),paste0("(",round2(cox3[,3],2),", ", round2(cox3[,4],2),")"))
 
 # Any new onset
 cox_isch <- coxtab(a1[a1_horm,],'ischemic_heart_disease_grp_rec',prevcvd)
@@ -666,17 +875,20 @@ cox3rec <- cbind(cox3rec[,1:5],'',cox3rec[,6:9],'',cox3rec[,10:13],'',cox3rec[,1
 
 # rad
 # Pure incidence
-cox_isch <- coxtab(a1[a1_ihd_rad,],'ischemic_heart_disease_grp_inc',prevcvd[-3])
-cox_stroke <- coxtab(a1[a1_stroke_rad,],'stroke_tia_grp_inc',prevcvd[-5])
-cox_chf <- coxtab(a1[a1_chf_rad,],'cardiomyopathy_heart_failure_grp_inc',prevcvd[-2])
-cox_cvdcombo <- coxtab(a1[a1_combo_rad,],'cvdcombo_grp_inc',prevcvd[c(-2,-3,-5)])
-cox4 <- Reduce(function(...) merge(...,by='var', all=T),
-               list(cox_isch, cox_stroke, cox_chf, cox_cvdcombo))
-cox4[,-1] <- lapply(cox4[,-1], as.character)
-cox4 <- rbind(cox4[1,],'',cox4[2,],'',cox4[3:7,],cox4[8,],'',cox4[9:11,],cox4[12,],'',
-              cox4[13:14,],'',cox4[15:16,],'',cox4[17:20,],'',cox4[21:24,],'',
-              cox4[25:27,],'',cox4[28:34,])
-cox4 <- cbind(cox4[,1:5],'',cox4[,6:9],'',cox4[,10:13],'',cox4[,14:17])
+cox_isch <- coxtab(a1[a1_ihd_rad,],'ischemic_heart_disease_grp_inc',prevcvd[-4])
+cox_stroke <- coxtab(a1[a1_stroke_rad,],'stroke_grp_inc',prevcvd[-6])
+cox_hf <- coxtab(a1[a1_hf_rad,],'heart_failure_grp_inc',prevcvd[-3])
+cox_cm <- coxtab(a1[a1_cm_rad,],'cardiomyopathy_grp_inc',prevcvd[-2])
+cox_cvdcombo <- coxtab(a1[a1_combo_rad,],'cvdcombo_grp_inc',prevcvd[c(-2,-3,-4,-6)])
+cox_diab <- coxtab(a1[a1_diab_rad,],'cvdrf_diab',prevcvd)
+cox_htn <- coxtab(a1[a1_htn_rad,],'cvdrf_htn',prevcvd)
+cox_dyslipid <- coxtab(a1[a1_dyslipid_rad,],'cvdrf_dyslipid',prevcvd)
+cox_rfcombo <- coxtab(a1[a1_rfcombo_rad,],'cvdrfcombo',prevcvd)
+cox4 <- rbind(cox_isch[1:2,],cox_hf[1:2,], cox_cm[1:2,], cox_stroke[1:2,], 
+              cox_cvdcombo[1:2,],cox_htn[1:2,],cox_diab[1:2,],cox_dyslipid[1:2,],
+              cox_rfcombo[1:2,])
+cox4[,-1] <- lapply(cox4[,-1], function(x) as.numeric(as.character(x)))
+cox4 <- cbind(round2(cox4[,2],2),paste0("(",round2(cox4[,3],2),", ", round2(cox4[,4],2),")"))
 
 # Any new onset
 cox_isch <- coxtab(a1[a1_rad,],'ischemic_heart_disease_grp_rec',prevcvd)
@@ -755,11 +967,12 @@ cox6rec <- cbind(cox6rec[,1:5],'',cox6rec[,6:9],'',cox6rec[,10:13],'',cox6rec[,1
 
 
 # export tables
-write_csv(cox2,'cox_chemo_incid.csv')
+write_csv(data.frame(cox1),'cox_all_incid.csv')
+write_csv(data.frame(cox2),'cox_chemo_incid.csv')
 write_csv(cox2rec,'cox_chemo_newonset.csv')
-write_csv(cox3,'cox_horm_incid.csv')
+write_csv(data.frame(cox3),'cox_horm_incid.csv')
 write_csv(cox3rec,'cox_horm_newonset.csv')
-write_csv(cox4,'cox_rad_incid.csv')
+write_csv(data.frame(cox4),'cox_rad_incid.csv')
 write_csv(cox4rec,'cox_rad_newonset.csv')
 write_csv(cox5,'cox_rad_left_incid.csv')
 write_csv(cox5rec,'cox_rad_left_newonset.csv')
