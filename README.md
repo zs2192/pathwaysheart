@@ -1,6 +1,6 @@
 # Pathways Heart Study analytical file repository
 
-## Current anlayses are based on data received on 11/12/2019:
+## Current anlayses are based on data received on 11/12/2019.
 
 ### Cases with tumor characteristics: 
     cases.sas7bdat; 
