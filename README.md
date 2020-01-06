@@ -2,10 +2,10 @@
 
 ## Current anlayses are based on data received on 11/12/2019:
 
-Cases with tumor characteristics: cases.sas7bdat; 
-Controls: controls.sas7bdat; 
+### Cases with tumor characteristics: cases.sas7bdat; 
+### Controls: controls.sas7bdat; 
 
-Baseline risk factors: 
+### Baseline risk factors: 
     baseline_bmi.sas7bdat; 
     baseline_bp.sas7bdat; 
     dyslipidemia.sas7bdat; 
@@ -15,9 +15,9 @@ Baseline risk factors:
     menopause.sas7bdat; 
     census.sas7bdat
 
-CVD outcome: cvd_events.sas7bdat
+### CVD outcome: cvd_events.sas7bdat
 
-Censoring events: censoring.sas7bdat
+### Censoring events: censoring.sas7bdat
 
 ## There are 2 R codes:
 
