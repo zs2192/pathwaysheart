@@ -1,5 +1,5 @@
-# CVD and BC exploratory data analysis
-# Zaixing Shi, 12/11/2019
+# Pathways Heart Study Aim 1 data analysis
+# Zaixing Shi, 1/7/2019
 
 
 library(tidyverse)
@@ -39,9 +39,10 @@ tab1 <- function(d,x){
   } 
   sum
 }
+
 # variables to analyze
 varlist <- c('enr_len','cops2','bmi1','agegrp','raceethn1',
-             'bmicat','smok','menop','diab','dyslipidemia',
+             'bmicat','smok','menop','diab_bl','htn_bl','dyslipid_bl',
              "systolic" ,"diastolic","glu_f","hdl","hgba1c",
              "ldl_clc_ns","tot_choles","trigl_ns",
              'medhousincome','houspoverty', "edu1","edu2","edu3","edu4")
@@ -188,6 +189,9 @@ write_csv(table2_rec_cvd_rad[table2_rec_cvd_rad$V1=='Yes',], 'table2_rec_cvd_rad
 
 
 
+
+
+
 ################################################################################
 # Compare cvd risk factor frequencies between cases and controls
 
@@ -215,6 +219,8 @@ write_csv(table2_cvdrf[table2_cvdrf$V1=='Yes',], 'table2_cvdrf.csv')
 write_csv(table2_cvdrf_chemo[table2_cvdrf_chemo$V1=='Yes',], 'table2_cvdrf_chemo.csv')
 write_csv(table2_cvdrf_horm[table2_cvdrf_horm$V1=='Yes',], 'table2_cvdrf_horm.csv')
 write_csv(table2_cvdrf_rad[table2_cvdrf_rad$V1=='Yes',], 'table2_cvdrf_rad.csv')
+
+
 
 
 
@@ -288,9 +294,7 @@ inc_rad <- data.frame(rbind(inc_rate(a1_ihd_rad,'ischemic_heart_disease_grp_inc'
                               '',inc_rate(a1_rfcombo_rad,'cvdrfcombo','cvdrfcombo_fu')))
 
 
-
 inc_combined <- cbind(inc_all, inc_chemo, inc_horm, inc_rad)
-
 
 write_csv(inc_combined, 'incidence_all.csv')
 
@@ -386,6 +390,8 @@ splots[[5]] <- ggsurvplot(fit1, data = a1[a1_combo,],fun = "event", size=1, risk
 
 fig2 <- arrange_ggsurvplots(splots,ncol = 2, nrow = 3, risk.table.height = 0.25)
 ggsave("fig2.png", fig2,width = 13, height = 18)
+
+
 
 
 
@@ -658,6 +664,9 @@ ggsave("fig8.png", fig8, width = 13, height = 18)
 
 
 
+
+
+
 ################################################################################
 # KM plot of incident CVD rf
 
@@ -724,20 +733,28 @@ prevcvd <- c("arrhythmia_grp_prev","cardiomyopathy_grp_prev","heart_failure_grp_
             "stroke_grp_prev","tia_grp_prev","valvular_disease_grp_prev","venous_thromboembolic_disease_grp_prev")
 
 ###
-# run models in CASES and CONTROL 1
 # Pure incidence
 cox_isch <- coxtab(a1[a1_ihd,],'ischemic_heart_disease_grp_inc',prevcvd[-4])
 cox_stroke <- coxtab(a1[a1_stroke,],'stroke_grp_inc',prevcvd[-6])
 cox_hf <- coxtab(a1[a1_hf,],'heart_failure_grp_inc',prevcvd[-3])
 cox_cm <- coxtab(a1[a1_cm,],'cardiomyopathy_grp_inc',prevcvd[-2])
 cox_cvdcombo <- coxtab(a1[a1_combo,],'cvdcombo_grp_inc',prevcvd[c(-2,-3,-4,-6)])
+cox_arrhythmia <- coxtab(a1[a1_arrhythmia,],'arrhythmia_grp_inc',prevcvd[c(-1)])
+cox_cardiac <- coxtab(a1[a1_cardiac,],'cardiac_arrest_grp_inc',prevcvd[c(-1)])
+cox_carotid <- coxtab(a1[a1_carotid,],'carotid_disease_grp_inc',prevcvd[c(-1)])
+cox_myocarditis <- coxtab(a1[a1_myocarditis,],'myocarditis_pericarditis_grp_inc',prevcvd[c(-1)])
+cox_tia <- coxtab(a1[a1_tia,],'tia_grp_inc',prevcvd[c(-1)])
+cox_valvular <- coxtab(a1[a1_valvular,],'valvular_disease_grp_inc',prevcvd[c(-1)])
+cox_dvt <- coxtab(a1[a1_dvt,],'venous_thromboembolic_disease_grp_inc',prevcvd[c(-1)])
 cox_diab <- coxtab(a1[a1_diab,],'cvdrf_diab',prevcvd)
 cox_htn <- coxtab(a1[a1_htn,],'cvdrf_htn',prevcvd)
 cox_dyslipid <- coxtab(a1[a1_dyslipid,],'cvdrf_dyslipid',prevcvd)
 cox_rfcombo <- coxtab(a1[a1_rfcombo,],'cvdrfcombo',prevcvd)
 cox1 <- rbind(cox_isch[1:2,],cox_hf[1:2,], cox_cm[1:2,], cox_stroke[1:2,], 
               cox_cvdcombo[1:2,],cox_htn[1:2,],cox_diab[1:2,],cox_dyslipid[1:2,],
-              cox_rfcombo[1:2,])
+              cox_rfcombo[1:2,],"",
+              cox_arrhythmia[1:2,], cox_cardiac[1:2,], cox_carotid[1:2,], 
+              cox_myocarditis[1:2,], cox_tia[1:2,], cox_valvular[1:2,], cox_dvt[1:2,])
 cox1[,-1] <- lapply(cox1[,-1], function(x) as.numeric(as.character(x)))
 cox1 <- cbind(round2(cox1[,2],2),paste0("(",round2(cox1[,3],2),", ", round2(cox1[,4],2),")"))
 
@@ -756,46 +773,10 @@ cox1rec <- rbind(cox1rec[1,],'',cox1rec[2,],'',cox1rec[3:7,],cox1rec[8,],'',cox1
               cox1rec[25:27,],'',cox1rec[28:34,])
 cox1rec <- cbind(cox1rec[,1:5],'',cox1rec[,6:9],'',cox1rec[,10:13],'',cox1rec[,14:17])
 
-
-###
-# run models in CASES and CONTROL 2
-
-# Pure incidence
-a2_cox_isch <- coxtab(a2[a2_ihd,],'ischemic_heart_disease_grp_inc',prevcvd[-3])
-a2_cox_stroke <- coxtab(a2[a2_stroke,],'stroke_tia_grp_inc',prevcvd[-5])
-a2_cox_chf <- coxtab(a2[a2_chf,],'cardiomyopathy_heart_failure_grp_inc',prevcvd[-2])
-a2_cox_cvdcombo <- coxtab(a2[a2_combo,],'cvdcombo_grp_inc',prevcvd[c(-2,-3,-5)])
-a2_cox1 <- Reduce(function(...) merge(...,by='var', all=T),
-               list(a2_cox_isch, a2_cox_stroke, a2_cox_chf, a2_cox_cvdcombo))
-a2_cox1[,-1] <- lapply(a2_cox1[,-1], as.character)
-a2_cox1 <- rbind(a2_cox1[1,],'',a2_cox1[2,],'',a2_cox1[3:7,],a2_cox1[8,],'',a2_cox1[9:11,],a2_cox1[12,],'',
-              a2_cox1[13:14,],'',a2_cox1[15:16,],'',a2_cox1[17:20,],'',a2_cox1[21:24,],'',
-              a2_cox1[25:27,],'',a2_cox1[28:34,])
-a2_cox1 <- cbind(a2_cox1[,1:5],'',a2_cox1[,6:9],'',a2_cox1[,10:13],'',a2_cox1[,14:17])
-
-# Any new onset
-a2_cox_isch <- coxtab(a2,'ischemic_heart_disease_grp_rec',prevcvd)
-a2_cox_stroke <- coxtab(a2,'stroke_tia_grp_rec',prevcvd)
-a2_cox_chf <- coxtab(a2,'cardiomyopathy_heart_failure_grp_rec',prevcvd)
-a2_cox_cvdcombo <- coxtab(a2,'cvdcombo_grp_rec',prevcvd)
-a2_cox1rec <- Reduce(function(...) merge(...,by='var', all=T),
-                  list(a2_cox_isch, a2_cox_stroke, a2_cox_chf, a2_cox_cvdcombo))
-a2_cox1rec[,-1] <- lapply(a2_cox1rec[,-1], as.character)
-a2_cox1rec <- a2_cox1rec[order(a2_cox1rec$var),]
-a2_cox1rec <- rbind(a2_cox1rec[1,],'',a2_cox1rec[2,],'',a2_cox1rec[3:7,],a2_cox1rec[8,],'',a2_cox1rec[9:11,],a2_cox1rec[12,],'',
-                 a2_cox1rec[13:14,],'',a2_cox1rec[15:16,],'',a2_cox1rec[17:20,],'',a2_cox1rec[21:24,],'',
-                 a2_cox1rec[25:27,],'',a2_cox1rec[28:34,])
-a2_cox1rec <- cbind(a2_cox1rec[,1:5],'',a2_cox1rec[,6:9],'',a2_cox1rec[,10:13],'',a2_cox1rec[,14:17])
-
-
-
 # export tables as csv file
 
 write_csv(cox1,'cox_all_incid.csv')
 write_csv(cox1rec,'cox_all_newonset.csv')
-write_csv(a2_cox1,'cox_cntrl2_incid.csv')
-write_csv(a2_cox1rec,'cox_cntrl2_newonset.csv')
-
 
 
 
@@ -813,15 +794,24 @@ cox_stroke <- coxtab(a1[a1_stroke_chemo,],'stroke_grp_inc',prevcvd[-6])
 cox_hf <- coxtab(a1[a1_hf_chemo,],'heart_failure_grp_inc',prevcvd[-3])
 cox_cm <- coxtab(a1[a1_cm_chemo,],'cardiomyopathy_grp_inc',prevcvd[-2])
 cox_cvdcombo <- coxtab(a1[a1_combo_chemo,],'cvdcombo_grp_inc',prevcvd[c(-2,-3,-4,-6)])
+cox_arrhythmia <- coxtab(a1[a1_arrhythmia_chemo,],'arrhythmia_grp_inc',prevcvd[c(-1)])
+cox_cardiac <- coxtab(a1[a1_cardiac_chemo,],'cardiac_arrest_grp_inc',prevcvd[c(-1)])
+cox_carotid <- coxtab(a1[a1_carotid_chemo,],'carotid_disease_grp_inc',prevcvd[c(-1)])
+cox_myocarditis <- coxtab(a1[a1_myocarditis_chemo,],'myocarditis_pericarditis_grp_inc',prevcvd[c(-1)])
+cox_tia <- coxtab(a1[a1_tia_chemo,],'tia_grp_inc',prevcvd[c(-1)])
+cox_valvular <- coxtab(a1[a1_valvular_chemo,],'valvular_disease_grp_inc',prevcvd[c(-1)])
+cox_dvt <- coxtab(a1[a1_dvt_chemo,],'venous_thromboembolic_disease_grp_inc',prevcvd[c(-1)])
 cox_diab <- coxtab(a1[a1_diab_chemo,],'cvdrf_diab',prevcvd)
 cox_htn <- coxtab(a1[a1_htn_chemo,],'cvdrf_htn',prevcvd)
 cox_dyslipid <- coxtab(a1[a1_dyslipid_chemo,],'cvdrf_dyslipid',prevcvd)
 cox_rfcombo <- coxtab(a1[a1_rfcombo_chemo,],'cvdrfcombo',prevcvd)
 cox2 <- rbind(cox_isch[1:2,],cox_hf[1:2,], cox_cm[1:2,], cox_stroke[1:2,], 
               cox_cvdcombo[1:2,],cox_htn[1:2,],cox_diab[1:2,],cox_dyslipid[1:2,],
-              cox_rfcombo[1:2,])
+              cox_rfcombo[1:2,],"",
+              cox_arrhythmia[1:2,], cox_cardiac[1:2,], cox_carotid[1:2,], 
+              cox_myocarditis[1:2,], cox_tia[1:2,], cox_valvular[1:2,], cox_dvt[1:2,])
 cox2[,-1] <- lapply(cox2[,-1], function(x) as.numeric(as.character(x)))
-cox2 <- cbind(round2(cox2[,2],2),paste0("(",round2(cox2[,3],2),", (", round2(cox2[,4],2),")"))
+cox2 <- cbind(round2(cox2[,2],2),paste0("(",round2(cox2[,3],2),", ", round2(cox2[,4],2),")"))
 
 # Any new onset
 cox_isch <- coxtab(a1[a1_chemo,],'ischemic_heart_disease_grp_rec',prevcvd)
@@ -847,13 +837,22 @@ cox_stroke <- coxtab(a1[a1_stroke_horm,],'stroke_grp_inc',prevcvd[-6])
 cox_hf <- coxtab(a1[a1_hf_horm,],'heart_failure_grp_inc',prevcvd[-3])
 cox_cm <- coxtab(a1[a1_cm_horm,],'cardiomyopathy_grp_inc',prevcvd[-2])
 cox_cvdcombo <- coxtab(a1[a1_combo_horm,],'cvdcombo_grp_inc',prevcvd[c(-2,-3,-4,-6)])
+cox_arrhythmia <- coxtab(a1[a1_arrhythmia_horm,],'arrhythmia_grp_inc',prevcvd[c(-1)])
+cox_cardiac <- coxtab(a1[a1_cardiac_horm,],'cardiac_arrest_grp_inc',prevcvd[c(-1)])
+cox_carotid <- coxtab(a1[a1_carotid_horm,],'carotid_disease_grp_inc',prevcvd[c(-1)])
+cox_myocarditis <- coxtab(a1[a1_myocarditis_horm,],'myocarditis_pericarditis_grp_inc',prevcvd[c(-1)])
+cox_tia <- coxtab(a1[a1_tia_horm,],'tia_grp_inc',prevcvd[c(-1)])
+cox_valvular <- coxtab(a1[a1_valvular_horm,],'valvular_disease_grp_inc',prevcvd[c(-1)])
+cox_dvt <- coxtab(a1[a1_dvt_horm,],'venous_thromboembolic_disease_grp_inc',prevcvd[c(-1)])
 cox_diab <- coxtab(a1[a1_diab_horm,],'cvdrf_diab',prevcvd)
 cox_htn <- coxtab(a1[a1_htn_horm,],'cvdrf_htn',prevcvd)
 cox_dyslipid <- coxtab(a1[a1_dyslipid_horm,],'cvdrf_dyslipid',prevcvd)
 cox_rfcombo <- coxtab(a1[a1_rfcombo_horm,],'cvdrfcombo',prevcvd)
 cox3 <- rbind(cox_isch[1:2,],cox_hf[1:2,], cox_cm[1:2,], cox_stroke[1:2,], 
               cox_cvdcombo[1:2,],cox_htn[1:2,],cox_diab[1:2,],cox_dyslipid[1:2,],
-              cox_rfcombo[1:2,])
+              cox_rfcombo[1:2,],"",
+              cox_arrhythmia[1:2,], cox_cardiac[1:2,], cox_carotid[1:2,], 
+              cox_myocarditis[1:2,], cox_tia[1:2,], cox_valvular[1:2,], cox_dvt[1:2,])
 cox3[,-1] <- lapply(cox3[,-1], function(x) as.numeric(as.character(x)))
 cox3 <- cbind(round2(cox3[,2],2),paste0("(",round2(cox3[,3],2),", ", round2(cox3[,4],2),")"))
 
@@ -880,13 +879,22 @@ cox_stroke <- coxtab(a1[a1_stroke_rad,],'stroke_grp_inc',prevcvd[-6])
 cox_hf <- coxtab(a1[a1_hf_rad,],'heart_failure_grp_inc',prevcvd[-3])
 cox_cm <- coxtab(a1[a1_cm_rad,],'cardiomyopathy_grp_inc',prevcvd[-2])
 cox_cvdcombo <- coxtab(a1[a1_combo_rad,],'cvdcombo_grp_inc',prevcvd[c(-2,-3,-4,-6)])
+cox_arrhythmia <- coxtab(a1[a1_arrhythmia_rad,],'arrhythmia_grp_inc',prevcvd[c(-1)])
+cox_cardiac <- coxtab(a1[a1_cardiac_rad,],'cardiac_arrest_grp_inc',prevcvd[c(-1)])
+cox_carotid <- coxtab(a1[a1_carotid_rad,],'carotid_disease_grp_inc',prevcvd[c(-1)])
+cox_myocarditis <- coxtab(a1[a1_myocarditis_rad,],'myocarditis_pericarditis_grp_inc',prevcvd[c(-1)])
+cox_tia <- coxtab(a1[a1_tia_rad,],'tia_grp_inc',prevcvd[c(-1)])
+cox_valvular <- coxtab(a1[a1_valvular_rad,],'valvular_disease_grp_inc',prevcvd[c(-1)])
+cox_dvt <- coxtab(a1[a1_dvt_rad,],'venous_thromboembolic_disease_grp_inc',prevcvd[c(-1)])
 cox_diab <- coxtab(a1[a1_diab_rad,],'cvdrf_diab',prevcvd)
 cox_htn <- coxtab(a1[a1_htn_rad,],'cvdrf_htn',prevcvd)
 cox_dyslipid <- coxtab(a1[a1_dyslipid_rad,],'cvdrf_dyslipid',prevcvd)
 cox_rfcombo <- coxtab(a1[a1_rfcombo_rad,],'cvdrfcombo',prevcvd)
 cox4 <- rbind(cox_isch[1:2,],cox_hf[1:2,], cox_cm[1:2,], cox_stroke[1:2,], 
               cox_cvdcombo[1:2,],cox_htn[1:2,],cox_diab[1:2,],cox_dyslipid[1:2,],
-              cox_rfcombo[1:2,])
+              cox_rfcombo[1:2,],"",
+              cox_arrhythmia[1:2,], cox_cardiac[1:2,], cox_carotid[1:2,], 
+              cox_myocarditis[1:2,], cox_tia[1:2,], cox_valvular[1:2,], cox_dvt[1:2,])
 cox4[,-1] <- lapply(cox4[,-1], function(x) as.numeric(as.character(x)))
 cox4 <- cbind(round2(cox4[,2],2),paste0("(",round2(cox4[,3],2),", ", round2(cox4[,4],2),")"))
 
@@ -979,6 +987,8 @@ write_csv(cox5rec,'cox_rad_left_newonset.csv')
 write_csv(cox6,'cox_rad_right_incid.csv')
 write_csv(cox6rec,'cox_rad_right_newonset.csv')
 
+cox_all <- data.frame(cbind(cox1, '', cox2,'', cox3,'', cox4))
+write_csv(cox_all,'cox_all.csv')
 
 
 
@@ -996,94 +1006,29 @@ names(tab1ns) <- c('all','cases','controls')
 tab1ns$sample <- c('all','chemo','hormonal','radiation')
 
 
-coxns <- data.frame(rbind(c(nrow(a1),sapply(list(a1_ihd,a1_stroke,a1_chf,a1_combo),length)),
-               c(nrow(a2),sapply(list(a2_ihd,a2_stroke,a2_chf,a2_combo),length)),
-               c(length(a1_chemo),sapply(list(a1_ihd_chemo,a1_stroke_chemo,a1_chf_chemo,a1_combo_chemo),length)),
-               c(length(a1_horm),sapply(list(a1_ihd_horm,a1_stroke_horm,a1_chf_horm,a1_combo_horm),length)),
-               c(length(a1_rad),sapply(list(a1_ihd_rad,a1_stroke_rad,a1_chf_rad,a1_combo_rad),length)),
-               c(length(a1_rad_l),sapply(list(a1_ihd_rad_l,a1_stroke_rad_l,a1_chf_rad_l,a1_combo_rad_l),length)),
-               c(length(a1_rad_r),sapply(list(a1_ihd_rad_r,a1_stroke_rad_r,a1_chf_rad_r,a1_combo_rad_r),length))))
-names(coxns) <- c('all','no IHD','no stroke tia','no CHF','no any 3 cvd')
-coxns$sample <- c('all','all control2','chemo','hormonal','radiation','left tumor radiation','right tumor radiation')
+coxns <- data.frame(t(rbind(c(nrow(a1),
+                            sapply(list(a1_ihd,a1_hf,a1_cm,a1_stroke,a1_combo,
+                                        a1_htn,a1_diab,a1_dyslipid,a1_rfcombo,
+                                        a1_arrhythmia,a1_cardiac,a1_carotid,
+                                        a1_myocarditis,a1_tia,a1_valvular,a1_dvt),length)),
+               c(length(a1_chemo),sapply(list(a1_ihd_chemo,a1_hf_chemo,a1_cm_chemo,a1_stroke_chemo,a1_combo,
+                                      a1_htn_chemo,a1_diab_chemo,a1_dyslipid_chemo,a1_rfcombo_chemo,
+                                      a1_arrhythmia_chemo,a1_cardiac_chemo,a1_carotid_chemo,
+                                      a1_myocarditis_chemo,a1_tia_chemo,a1_valvular_chemo,a1_dvt_chemo),length)),
+               c(length(a1_horm),sapply(list(a1_ihd_horm,a1_hf_horm,a1_cm_horm,a1_stroke_horm,a1_combo,
+                                              a1_htn_horm,a1_diab_horm,a1_dyslipid_horm,a1_rfcombo_horm,
+                                              a1_arrhythmia_horm,a1_cardiac_horm,a1_carotid_horm,
+                                              a1_myocarditis_horm,a1_tia_horm,a1_valvular_horm,a1_dvt_horm),length)),
+               c(length(a1_rad),sapply(list(a1_ihd_rad,a1_hf_rad,a1_cm_rad,a1_stroke_rad,a1_combo,
+                                            a1_htn_rad,a1_diab_rad,a1_dyslipid_rad,a1_rfcombo_rad,
+                                            a1_arrhythmia_rad,a1_cardiac_rad,a1_carotid_rad,
+                                            a1_myocarditis_rad,a1_tia_rad,a1_valvular_rad,a1_dvt_rad),length)))))
+coxns[,1:4] <- lapply(coxns[,1:4],function(x) paste0('n=',x))
+names(coxns) <- c('all','chemo','horm','rad')
+coxns$sample <- c('all','IHD','HF','CM','stroke','cvd combo','htn','diabetes', 'dyslipid',
+                  'cvdrf combo','arrhyth','cardiac','carotid','myocard','tia','valvular','dvt')
 
 # export sample sizes
 write_csv(tab1ns, 'sample_size_tab1.csv')
 write_csv(coxns, 'sample_size_cox_models.csv')
-
-
-
-
-################################################################################
-#
-#   Lab data quality check - not for main analysis
-#
-################################################################################
-# date buffer vs. available lab data
-
-#bmi
-
-bmi_n <- data.frame(t(sapply(-7:-90, function(x){
-  ids <- unique(bmi$CVD_studyid[which(bmi$datediff %in% x:0)])
-  c(x,prop.table(table(a1$cvd_studyid %in% ids)))
-})))
-
-bp_n <- data.frame(t(sapply(-7:-90, function(x){
-  ids <- unique(bp$CVD_studyid[which(bp$datediff %in% x:0)])
-  c(x,prop.table(table(a1$cvd_studyid %in% ids)))
-})))
-
-lab_n <- data.frame(t(sapply(-7:-90, function(x){
-  ids <- unique(labs$CVD_studyid[which(labs$datediff %in% x:0)])
-  c(x,prop.table(table(a1$cvd_studyid %in% ids)))
-})))
-
-sample_n <- rbind(bmi_n,bp_n,lab_n)
-sample_n$sample <- factor(rep(c('BMI','Blood pressure','Labs'), each=84),
-                          levels=c('BMI','Blood pressure','Labs'))
-
-# plot the relationship
-
-png('date vs cutoff.png',width = 5,height = 3.5,res=400, units = 'in')
-ggplot(sample_n)+
-  geom_line(aes(x=V1,y=100*TRUE.,color=sample),size=1)+
-  scale_x_continuous(name = 'Cutoff days before index date',breaks = c(-7,-30,-60,-90))+
-  scale_y_continuous(name = '% have data',breaks = c(0,10,20,30,40,50))+
-  scale_color_discrete(name='Data')+
-  theme_bw()
-dev.off()
-
-
-
-################################################################################
-# data distribution
-
-par(mfrow=c(2,5))
-lapply(c('cops2','bmi',"systolic" ,"diastolic","glu_f","hdl","hgba1c",
-         "ldl_clc_ns","tot_choles","trigl_ns"),
-       function(x){
-         min_value <- min(a1[,x], na.rm=T)
-         max_value <- max(a1[,x], na.rm=T)
-         plot(density(a1[,x], na.rm=T),
-              xlab = paste0('Min=',min_value,', Max=',max_value),
-              main=x)
-       })
-
-png('histograms.png',width = 10,height = 4,res=400, units = 'in')
-par(mfrow=c(2,5))
-lapply(c('cops2','bmi',"systolic" ,"diastolic","glu_f","hdl","hgba1c",
-         "ldl_clc_ns","tot_choles","trigl_ns"),
-       function(x){
-         min_value <- min(a1[,x], na.rm=T)
-         max_value <- max(a1[,x], na.rm=T)
-         hist(a1[,x],breaks = 20,
-              xlab = paste0('Min=',min_value,', Max=',max_value),
-              main=x)
-       })
-dev.off()
-
-
-
-
-
-
 
