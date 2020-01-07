@@ -12,6 +12,11 @@ library(reshape2)
 library(survival)
 library(survminer)
 
+# define function round2() to round number to exact decimal place
+round2 <- function(x, k) trimws(format(round(x, k), nsmall=k))
+
+
+
 
 ################################################################################
 # compare characteristics between cases and controls

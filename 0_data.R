@@ -97,7 +97,9 @@ all <- rbind(cases, controls)
 
 ################################################################################
 # Select labs data
-# Date range: closest measure within 36 mos prior to index date and before surgery
+# The following steps are recommended because the original data may include data 
+# that fall outside the date range - within 36 mos prior to index date and before 
+# surgery
 
 
 # BMI
@@ -329,6 +331,8 @@ write_csv(cvd3_final,'cvd3_final.csv')
 
 
 
+
+
 ################################################################################
 # Merge all data
 
@@ -369,43 +373,6 @@ a1[,grep('inc$|prev$|rec$',names(a1))] <-
 write_csv(a1,'a1.csv')
 
 
-
-
-## combine all data into a list - using CONTROL2
-
-datalist <- list(all2[,-grep("deathdt|enr_start|enr_end",names(all))], 
-                 bmi2,bp2,
-                 labs2[,c("num7_studyid","GLU_F","GTT75_PRE","HDL","HGBA1C","LDL_CLC_NS","TOT_CHOLES","TRIGL_NS")],
-                 diab[,c(1,4:10)],lipid[,2:4], 
-                 smok1[,c(2,5:8)],menop[,c(1,3)],parity[,c(1,5,6)],
-                 census[,c(2,5:48)],
-                 cvd2_final[,-grep('index_date',names(cvd2_final))],
-                 cvd3_final[,-grep('index_date',names(cvd3_final))],
-                 censor[,-c(2,7)])
-
-## make all var names lower case
-datalist <- lapply(datalist,function(x){
-  names(x) <- tolower(names(x))
-  x
-})
-
-## merge all data by num7_studyid
-a2 <- Reduce(function(...) merge(...,by='num7_studyid', all.x=T), datalist)
-
-## set all NA for cvd outcomes as 0
-a2[,tolower(c(cvd_grp,cvd_cond))] <- lapply(a2[,tolower(c(cvd_grp,cvd_cond))], function(x) {
-  x[is.na(x)] <- 'No'
-  x
-})
-
-a2[,grep('inc$|prev$|rec$',names(a2))] <- 
-  lapply(a2[,grep('inc$|prev$|rec$',names(a2))], function(x) {
-    x[is.na(x)] <- 0
-    x
-  })
-
-# save a copy of the merged data
-write_csv(a2,'a2.csv')
 
 
 
@@ -501,6 +468,8 @@ a1$edu1 <- rowSums(a1[,grep('education[1-3]$',names(a1), value=T)], na.rm = T)
 a1$edu2 <- rowSums(a1[,grep('education[4-5]$',names(a1), value=T)], na.rm = T)
 a1$edu3 <- a1$education6
 a1$edu4 <- rowSums(a1[,grep('education[7-8]$',names(a1), value=T)], na.rm = T)
+
+
 
 
 
@@ -629,6 +598,7 @@ a1$cvdcombo_grp_rec_fu[which(a1$cvdcombo_grp_rec==0)] <-
 
 
 
+
 ################################################################################
 # Define CVD risk factor outcomes
 
@@ -669,6 +639,9 @@ a1$cvdrf_dyslipid_fu[which(a1$cvdrf_dyslipid==0)] <- a1$censor_dt[which(a1$cvdrf
 
 a1$cvdrfcombo_fu <- a1$cvdrfcombo_dt
 a1$cvdrfcombo_fu[which(a1$cvdrfcombo==0)] <- a1$censor_dt[which(a1$cvdrfcombo==0)] 
+
+
+
 
 
 
@@ -721,6 +694,7 @@ a1$diastolic_2 <- cut(a1$diastolic,c(0,90,Inf),right=F,labels = c('Normal','Abno
 a1$diastolic_2 <- as.character(a1$diastolic_2)
 a1$diastolic_2[is.na(a1$diastolic_2)] <- 'Missing'
 a1$diastolic_2 <- factor(a1$diastolic_2,levels = c('Normal','Abnormal','Missing'))
+
 
 
 
